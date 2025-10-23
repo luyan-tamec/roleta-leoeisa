@@ -65,7 +65,7 @@
     margin-bottom: 15px;
   }
 
-  input[type="text"], input[type="number"] {
+  input[type="text"], input[type="number"], select {
     padding: 10px 12px;
     border-radius: 8px;
     border: none;
@@ -172,42 +172,24 @@
 
     <div class="controls">
       <input id="nome" type="text" placeholder="Digite um nome">
-      <input id="quantidade" type="number" placeholder="quant.vezes" min="1" value="" style="width:80px;">
+      <input id="quantidade" title="quantidade de vezes que o nome vai ser inserido na roleta!!!" type="number" placeholder="quant.vezes" min="1" value="" style="width:80px;">
       <button id="btnAdicionar">Adicionar</button>
-      <input id="tempo" type="number" min="1" placeholder="Tempo (seg)" style="width:110px;">
-      <button id="btnIniciar" <button style="
-  background-color: #43a047;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-  transition: all 0.2s ease;
-"
-onmouseover="this.style.backgroundColor='#66bb6a'"
-onmouseout="this.style.backgroundColor='#43a047'">Iniciar</button>
-      <button id="btnParar" style="
-  background-color: #e53935;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-  transition: all 0.2s ease;
-"
-onmouseover="this.style.backgroundColor='#ff5252'"
-onmouseout="this.style.backgroundColor='#e53935'">Parar</button>
+      <input id="tempo" title="tempo de giro da roleta ate parar!" type="number" min="1" placeholder="Tempo (seg)" style="width:110px;">
+      <button id="btnIniciar" style="background-color:#43a047;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:bold;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.3);transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='#66bb6a'" onmouseout="this.style.backgroundColor='#43a047'">Iniciar</button>
+      <button id="btnParar" style="background-color:#e53935;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:bold;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.3);transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='#ff5252'" onmouseout="this.style.backgroundColor='#e53935'">Parar</button>
     </div>
 
     <div class="extras">
       <input type="file" id="inputCSV" accept=".csv" style="display:none;">
-      <button id="btnImportar">📥 Importar CSV</button>
-      <button id="btnExportar">📤 Exportar CSV</button>
-      <button id="btnLimpar">🧹 Limpar Tudo</button>
+      <button id="btnImportar" title="importar o arquivo csv ,por padrao é pra twitch,do contrario altere nas colunas!!!">📥 Importar CSV</button>
+      <select id="colunaCSV" title="Selecione a coluna do csv onde estao os nomes" style="padding:8px;border-radius:8px;">
+        <option value="0">Coluna 1</option>
+        <option value="1" selected>Coluna 2</option>
+        <option value="2">Coluna 3</option>
+        <option value="3">Coluna 4</option>
+      </select>
+      <button id="btnExportar" title="exportar csv de acordo com a coluna escolhida!">📤 Exportar CSV</button>
+      <button id="btnLimpar" title="limpar tudo da roleta!!">🧹 Limpar Tudo</button>
     </div>
 
     <div id="listaNomes"></div>
@@ -229,14 +211,8 @@ tempo=document.getElementById('tempo'),res=document.getElementById('resultado'),
 lista=document.getElementById('listaNomes'),csv=document.getElementById('inputCSV');
 let nomes=[],cores=[],angulo=0,girando=false,vel=0,intv,dur=5000,ultimo=null,audioCtx=null;
 
-function ajustarCanvas(){
-  const tamanho=Math.min(window.innerWidth*0.8,500);
-  canvas.width=tamanho;
-  canvas.height=tamanho;
-  desenhar();
-}
+function ajustarCanvas(){const tamanho=Math.min(window.innerWidth*0.8,500);canvas.width=tamanho;canvas.height=tamanho;desenhar();}
 window.addEventListener('resize',ajustarCanvas);
-
 function ensureAudioContext(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}
 function playTick(){try{ensureAudioContext();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='square';o.frequency.setValueAtTime(1200,audioCtx.currentTime);g.gain.setValueAtTime(0,audioCtx.currentTime);g.gain.linearRampToValueAtTime(0.12,audioCtx.currentTime+0.001);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.07);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+0.08);}catch(e){}}
 function playStopSound(){try{ensureAudioContext();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(400,audioCtx.currentTime);o.frequency.linearRampToValueAtTime(900,audioCtx.currentTime+0.06);g.gain.setValueAtTime(0.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.2,audioCtx.currentTime+0.02);g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+1.2);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+1.25);}catch(e){}}
@@ -259,43 +235,52 @@ document.getElementById('btnLimpar').onclick=limpar;
 nome.addEventListener('keyup',e=>{if(e.key==='Enter')adicionar();});
 document.getElementById('btnImportar').onclick=()=>csv.click();
 
-/* === Importação CSV: ler a SEGUNDA coluna === */
+/* === Importação CSV com escolha de coluna === */
 csv.addEventListener('change', () => {
   const f = csv.files[0];
   if (!f) return;
-
+  const colIndex = parseInt(document.getElementById('colunaCSV').value);
   const reader = new FileReader();
   reader.onload = e => {
     const text = e.target.result;
     const linhas = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-
     const nomesImportados = [];
     for (let linha of linhas) {
       const partes = linha.split(',');
-      const nome = partes[1]?.trim(); // segunda coluna
-      if (nome && !nomesImportados.includes(nome)) {
-        nomesImportados.push(nome);
-      }
+      const nome = partes[colIndex]?.trim();
+      if (nome && !nomesImportados.includes(nome)) nomesImportados.push(nome);
     }
-
     if (nomesImportados.length === 0) {
-      alert("Nenhum nome encontrado na segunda coluna do CSV.");
+      alert(`Nenhum nome encontrado na coluna ${colIndex + 1}.`);
       return;
     }
-
     nomes = nomesImportados;
     cores = nomes.map(() => corAleatoria());
-    salvar();
-    desenhar();
-    atualizar();
-
-    alert(`🎉 Importados ${nomes.length} nomes da segunda coluna do CSV.`);
+    salvar(); desenhar(); atualizar();
+    alert(`🎉 Importados ${nomes.length} nomes da coluna ${colIndex + 1} do CSV.`);
   };
-
   reader.readAsText(f);
 });
 
-document.getElementById('btnExportar').onclick=()=>{if(!nomes.length){alert('Nenhum nome para exportar.');return;}const csvTxt=nomes.join("\n");const blob=new Blob([csvTxt],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="nomes_roleta.csv";a.click();URL.revokeObjectURL(url);};
+/* === Exportação CSV respeitando a coluna selecionada === */
+document.getElementById('btnExportar').onclick=()=>{
+  if(!nomes.length){alert('Nenhum nome para exportar.');return;}
+  const colIndex = parseInt(document.getElementById('colunaCSV').value);
+  const linhas = nomes.map(n => {
+    const cols = Array(colIndex + 1).fill('');
+    cols[colIndex] = n;
+    return cols.join(',');
+  });
+  const csvTxt = linhas.join('\n');
+  const blob = new Blob([csvTxt], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "nomes_roleta.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 window.remover=remover;
 ajustarCanvas();
 carregar();
