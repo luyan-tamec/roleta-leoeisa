@@ -82,6 +82,12 @@
       <input id="tempo" type="number" min="1" placeholder="Tempo (seg)" style="width:110px;" value="">
       <button id="btnIniciar" style="background-color:#43a047;color:#fff;">Iniciar</button>
       <button id="btnParar" style="background-color:#e53935;color:#fff;">Parar</button>
+      <button id="btnFullscreen">🖥️ Tela Cheia</button>
+      <button class="musica" id="btnMusica">🎵 Tocar Música</button>
+      <label style="display:flex;align-items:center;gap:6px;color:#ccc;">
+        🔊
+        <input type="range" id="volumeMusica" min="0" max="10" value="10" style="width:120px; height:40px;">
+      </label>
     </div>
 
     <div class="extras">
@@ -94,13 +100,7 @@
         <option value="3">Coluna 4</option>
       </select>
       <button id="btnExportar">📤 Exportar CSV</button>
-      <button id="btnFullscreen">🖥️ Tela Cheia</button>
       <button id="btnLimpar">🧹 Limpar Tudo</button>
-      <button class="musica" id="btnMusica">🎵 Tocar Música</button>
-      <label style="display:flex;align-items:center;gap:6px;color:#ccc;">
-        🔊
-        <input type="range" id="volumeMusica" min="0" max="1000" value="50" style="width:200px;">
-      </label>
     </div>
 
     <div id="listaNomes"></div>
@@ -120,7 +120,7 @@ tempo=document.getElementById('tempo'),overlay=document.getElementById('resultad
 lista=document.getElementById('listaNomes'),csv=document.getElementById('inputCSV');
 let nomes=[],cores=[],angulo=0,girando=false,vel=0,intv,dur=5000,ultimo=null,audioCtx=null;
 
-/* Sons da roleta */
+/* Sons da seta da roleta */
 function ensureAudioContext(){
   if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
   if(audioCtx.state==='suspended') audioCtx.resume();
@@ -147,11 +147,11 @@ function playStopSound(){
   }catch(e){}
 }
 
-/* Música personalizada */
+/* parte da Música personalizada */
 const musica=new Audio('musica.mp3');musica.loop=true;
 const volSalvo=localStorage.getItem('volumeMusica');
 if(volSalvo)musica.volume=parseFloat(volSalvo);
-document.getElementById('volumeMusica').value=musica.volume*2000;
+document.getElementById('volumeMusica').value=musica.volume*100;
 let tocandoMusica=false;
 document.getElementById('btnMusica').onclick=()=>{
   if(!tocandoMusica){
@@ -166,7 +166,7 @@ document.getElementById('btnMusica').onclick=()=>{
   }
 };
 document.getElementById('volumeMusica').oninput=e=>{
-  const vol=e.target.value/2000;musica.volume=vol;localStorage.setItem('volumeMusica',vol);
+  const vol=e.target.value/100;musica.volume=vol;localStorage.setItem('volumeMusica',vol);
 };
 
 /* Funções principais */
@@ -236,4 +236,3 @@ carregar();
 </script>
 </body>
 </html>
-
