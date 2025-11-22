@@ -127,6 +127,39 @@ document.getElementById("modoCor").addEventListener("change", () => {
   localStorage.setItem(PREFIX+"modoCor", document.getElementById("modoCor").value);
 });
 
+let tema = localStorage.getItem(PREFIX+"tema") || "escuro";
+const btnTema = document.getElementById("btnTema");
+const titulo = document.getElementById("titulo"); // h1
+
+function aplicarTema(){
+  if(tema === "claro"){
+    document.body.classList.add("tema-claro");
+    btnTema.textContent = "Tema";
+  } else {
+    document.body.classList.remove("tema-claro");
+    btnTema.textContent = "Tema";
+  }
+}
+
+if(btnTema){
+  btnTema.addEventListener("click", () => {
+    // alterna tema
+    tema = (tema === "claro") ? "escuro" : "claro";
+    localStorage.setItem(PREFIX+"tema", tema);
+    aplicarTema();
+
+    // alterna texto do H1
+    if (titulo.textContent === "Roleta Rindo e Apoiando!!") {
+      titulo.textContent = "Quem sao eles?";
+    } else {
+      titulo.textContent = "Roleta Rindo e Apoiando!!";
+    }
+  });
+}
+
+aplicarTema();
+
+
 function carregar(){
   const n = JSON.parse(localStorage.getItem(PREFIX+'nomes') || '[]');
   const c = JSON.parse(localStorage.getItem(PREFIX+'cores') || '[]');

@@ -84,12 +84,12 @@ canvas {
 
 /* TEMA CLARO */
 body.tema-claro {
-  background: #f2f2f2;
-  color: #000;
+  background: #FF4DA6;
+  color: #FF4DA6;
 }
 
 body.tema-claro .tagNome {
-  background: #e0e0e0;
+  background: #FF4DA6;
   border-color: #bdbdbd;
   color: #000;
 }
@@ -99,7 +99,7 @@ body.tema-claro button {
 }
 
 body.tema-claro canvas {
-  border-color: #000;
+  border-color: #FF4DA6;
 }
 
 body.tema-claro #resultadoOverlay {

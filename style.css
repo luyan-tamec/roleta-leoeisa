@@ -197,3 +197,29 @@ canvas {
   padding: 5px 10px;
   font-weight: 600;
 }
+
+/* TEMA CLARO */
+body.tema-claro {
+  background: #FF4DA6;
+  color: #FF4DA6;
+     
+}
+
+body.tema-claro .tagNome {
+  background: #FF4DA6;
+  border-color: #bdbdbd;
+  color: #000;
+}
+
+body.tema-claro button {
+  color: #000;
+}
+
+body.tema-claro canvas {
+  border-color: #FF4DA6;
+}
+
+body.tema-claro #resultadoOverlay {
+  background: rgba(255,255,255,0.95);
+  color: #000;
+}
