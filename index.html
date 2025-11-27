@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Roleta Rindo e Apoiando!</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Botão no canto esquerdo */
+    #btnLeft {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 10px 10px;
+      background: rgb(239, 10, 209,0.5);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 15px;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+    }
+
+    #btnLeft2 {
+      position: fixed;
+      top: 70px;
+      left: 20px;
+      padding: 10px 5px;
+      background: rgb(239, 10, 209,0.5);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 15px;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+    }
+
+    .cartao {
+      background-color: rgb(116, 116, 116, 0.3);
+      border: solid 2px rgb(255, 252, 252, 0.3);
+      border-radius: 30px;
+      margin: 20px;
+    }
+    
+    
+  </style>
+</head>
+
+<body>
+  <div class="botoesmenu">
+    <a id="btnLeft" href="index2.html">Roleta com chat</a>
+    <a id="btnLeft2" href="SorteadorTwitch.html">sorteador com chat</a>
+  </div>
+  <div class="layout">
+    <div class="painel">
+      <h1 id="titulo" style="margin:20px">Roleta <strong style="color: rgb(25, 94, 191);">Rindo</strong><strong style="color: rgb(143, 210, 222);">e</strong><strong style="color: rgba(181, 11, 125, 0.495);">Apoiando!!</strong></h1>
+      <div class="cartao">
+        <div class="controls">
+          <button id="btnTema">Tema</button>
+          <select id="modoCor">
+            <option value="colorido" selected>🏳‍🌈 cores do vale</option>
+            <option value="neutro">⚪ cores Neutras</option>
+          </select>
+          <input id="nome" type="text" placeholder="Digite um nome">
+          <input id="quantidade" type="number" min="1" value="" placeholder="quantidade" style="width:80px;">
+          <button id="btnAdicionar">Adicionar</button>
+          <input id="tempo" type="number" min="1" placeholder="Tempo (seg)" style="width:110px;">
+          <button id="btnIniciar" style="background-color:#43a047;color:#fff;">Iniciar</button>
+          <button id="btnParar" style="background-color:#e53935;color:#fff;">Parar</button>
+        </div>
+
+        <div class="extras">
+          <input type="file" id="inputCSV" accept=".csv" style="display:none;">
+          <button id="btnImportar">📥 Importar CSV</button>
+
+          <select id="colunaCSV">
+            <option value="0">Coluna 1</option>
+            <option value="1">Coluna 2</option>
+            <option value="2">Coluna 3</option>
+            <option value="3">Coluna 4</option>
+          </select>
+
+          <button id="btnExportar">📤 Exportar CSV</button>
+          <button id="btnFullscreen">🖥️ Tela Cheia</button>
+          <button id="btnLimpar">🧹 Limpar Tudo</button>
+
+          <button class="musica" id="btnMusica">🎵 Tocar Música</button>
+
+          <label style="display:flex;align-items:center;gap:6px;color:#ccc;">
+            🔊
+            <input type="range" id="volumeMusica" min="0" max="100" value="50" style="width:100px;">
+
+          </label>
+        </div>
+      </div>
+      <div id="ultimosVencedores">
+        <strong>🏆 Últimos Vencedores</strong>
+        <div id="listaVencedores"></div>
+        <button id="btnLimparVencedores" style="margin-top:8px;background:#e53935;color:#fff;height:35px;">🗑️ Limpar
+          Vencedores</button>
+      </div>
+
+      <div id="listaNomes"></div>
+    </div>
+
+    <div id="container">
+      <div class="seta"></div>
+      <canvas id="roleta"></canvas>
+      <div id="resultadoOverlay"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+
+</html>
