@@ -123,7 +123,7 @@ document.getElementById('volumeMusica').oninput = e => {
   localStorage.setItem(PREFIX+'volumeMusica', vol);
 };
 
-/* persistence */
+/* persistencia de dados */
 function salvar(){
   localStorage.setItem(PREFIX+'nomes', JSON.stringify(nomes));
   localStorage.setItem(PREFIX+'cores', JSON.stringify(cores));
