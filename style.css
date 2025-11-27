@@ -117,6 +117,7 @@ button:hover { transform: translateY(-2px); }
 }
 
 #container {
+  margin-top: 40px;
   position: relative;
   display: flex;
   justify-content: center;
@@ -224,3 +225,4 @@ body.tema-claro #resultadoOverlay {
   background: rgba(255,255,255,0.95);
   color: #000;
 }
+
