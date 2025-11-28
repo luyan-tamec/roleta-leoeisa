@@ -12,14 +12,20 @@
       position: fixed;
       top: 20px;
       left: 20px;
-      padding: 10px 14px;
-      background: #1976d2;
+      padding: 10px 10px;
+      background: rgb(239, 10, 209,0.5);
       color: #fff;
       text-decoration: none;
-      border-radius: 8px;
-      font-size: 16px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      border-radius: 15px;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       z-index: 9999;
+    }
+    .cartao {
+      background-color: rgb(116, 116, 116, 0.3);
+      border: solid 2px rgb(255, 252, 252, 0.3);
+      border-radius: 30px;
+      margin: 50px;
     }
   </style>
 </head>
@@ -28,7 +34,7 @@
 <div class="layout">
   <div class="painel">
     <h1>Roleta de Sorteio</h1>
-
+    <div class="cartao">
     <div class="controls">
       <select id="modoCor">
         <option value="colorido" selected>🏳‍🌈 cores do vale</option>
@@ -79,13 +85,14 @@
         </label>
       </div>
     </div>
+    </div>
 
     <!--capturar chat Twitch -->
     <div id="twitchControls" style="margin-top:12px;background:rgba(255,255,255,0.04);padding:8px;border-radius:8px;">
       <strong style="display:block;margin-bottom:6px;">Capturar Chat Twitch (chat)</strong>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <input id="twitchChannel" placeholder="Canal Twitch (ex: meu_canal)" style="padding:8px;border-radius:6px;border:none;outline:none;">
-        <input id="twitchKeyword" placeholder="Palavra-chave (ex: !participar)" style="padding:8px;border-radius:6px;border:none;outline:none;">
+        <input id="twitchChannel" placeholder="Canal (ex: isaroza_)" style="padding:8px;border-radius:6px;border:none;outline:none;">
+        <input id="twitchKeyword" placeholder="Pal.chave (ex: !Apoiando)" style="padding:8px;border-radius:6px;border:none;outline:none;">
         <button id="btnToggleTwitch">Conectar Twitch</button>
         <span id="twitchStatus" style="color:#ccc;margin-left:8px;">Desconectado</span>
       </div>
