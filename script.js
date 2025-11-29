@@ -355,7 +355,7 @@ function girar(){
 /* desaceleração suave */
 function suave(){
   let step = ()=>{
-    vel *= 0.986;
+    vel *= 0.980;
     if(vel < 0.0005) vel = 0;
     angulo += vel;
 
@@ -563,4 +563,5 @@ window.remover = remover;
 /* init */
 ajustarCanvas();
 carregar();
+
 
