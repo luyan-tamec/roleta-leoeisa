@@ -352,7 +352,7 @@ function suave(){
 
   function step(){
     // delta-time approximation using fixed 18ms baseline
-    vel *= 0.986;
+    vel *= 0.978;
     if(vel < 0.0005) vel = 0;
     angulo += vel;
 
@@ -663,3 +663,4 @@ window.addEventListener('resize', ajustarCanvas);
 /* startup */
 ajustarCanvas();
 carregar();
+
