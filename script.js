@@ -23,10 +23,9 @@ const paletaNeutra = [
 /* state */
 let nomes = [];
 let cores = [];
-let angulo = 0;
+let angulo = 0;             // radians
 let girando = false;
-let vel = 0;
-let intv;
+let vel = 0;                // base velocity units (interpreted relative to 18ms frame)
 let dur = 5000;
 let ultimo = null;
 let audioCtx = null;
@@ -36,7 +35,7 @@ let vencedores = JSON.parse(localStorage.getItem(PREFIX+'vencedores') || '[]');
 
 /* som de vencedor */
 const somVencedor = new Audio("vencedor.mp3");
-somVencedor.volume = 0.5; // ajuste se quiser
+somVencedor.volume = 1.0; // ajuste se quiser
 
 function corAleatoria(){
   return `hsl(${Math.floor(Math.random()*360)},75%,60%)`;
@@ -69,7 +68,6 @@ function playTick(){
 /* funcao que controla o bip e o som da roleta ao parar*/
 function playStopSound(){
   try{
-    
     ensureAudioContext();
     const o = audioCtx.createOscillator();
     const g = audioCtx.createGain();
@@ -82,15 +80,13 @@ function playStopSound(){
     o.connect(g);
     g.connect(audioCtx.destination);
     o.start();
-    o.stop(audioCtx.currentTime + 1.25);   
+    o.stop(audioCtx.currentTime + 1.25);
     setTimeout(() => {
-    somVencedor.pause();
-    somVencedor.currentTime = 0;
-}, 4000);
+      somVencedor.pause();
+      somVencedor.currentTime = 0;
+    }, 4000);
   }catch(e){}
 }
-
-
 
 /* player de musica */
 const musica = new Audio('musica.mp3');
@@ -170,28 +166,255 @@ if(btnTema){
 
 aplicarTema();
 
+/* ---------------------
+   Offscreen buffer setup
+   --------------------- */
+const bufferCanvas = document.createElement('canvas');
+const bufferCtx = bufferCanvas.getContext('2d');
+let animFrameId = null;   // for requestAnimationFrame loop
+let giroFrameId = null;   // for active spinning loop id (same as animFrameId but kept separate for clarity)
 
-function carregar(){
-  const n = JSON.parse(localStorage.getItem(PREFIX+'nomes') || '[]');
-  const c = JSON.parse(localStorage.getItem(PREFIX+'cores') || '[]');
+/* generate buffer image of the wheel (called only when names/size change) */
+function gerarBuffer(){
+  const w = canvas.width, h = canvas.height;
+  bufferCanvas.width = w;
+  bufferCanvas.height = h;
 
-  nomes = n;
-  cores = (c.length === n.length) ? c : n.map(()=>corAleatoria());
+  const cx = w/2, cy = h/2;
+  const r = Math.min(w,h)/2 - 6;
 
-  desenhar();
-  atualizar();
-  atualizarVencedores();
+  bufferCtx.clearRect(0,0,w,h);
+
+  const t = nomes.length;
+  if(!t){
+    // empty wheel outline
+    bufferCtx.beginPath();
+    bufferCtx.arc(cx,cy,r,0,2*Math.PI);
+    bufferCtx.lineWidth = 6;
+    bufferCtx.strokeStyle = '#fff';
+    bufferCtx.stroke();
+    return;
+  }
+
+  const ap = 2*Math.PI / t;
+
+  for (let i=0;i<t;i++){
+    const ini = i*ap;
+    bufferCtx.beginPath();
+    bufferCtx.moveTo(cx,cy);
+    bufferCtx.arc(cx,cy,r,ini,ini+ap);
+    bufferCtx.closePath();
+    bufferCtx.fillStyle = cores[i] || corAleatoria();
+    bufferCtx.fill();
+
+    bufferCtx.strokeStyle = '#222';
+    bufferCtx.lineWidth = 1;
+    bufferCtx.stroke();
+
+    // text drawing
+    bufferCtx.save();
+    bufferCtx.translate(cx,cy);
+    bufferCtx.rotate(ini + ap/2);
+    bufferCtx.textAlign = 'right';
+    bufferCtx.fillStyle = '#000';
+
+    let nm = nomes[i] || '';
+    bufferCtx.font = `bold ${(nm.length>18)?12:16}px Arial`;
+    if(nm.length>24) nm = nm.slice(0,21) + '...';
+    // position text a bit inside the rim
+    bufferCtx.fillText(nm, r-45, 8);
+    bufferCtx.restore();
+  }
+
+  // outer circle
+  bufferCtx.beginPath();
+  bufferCtx.arc(cx,cy,r,0,2*Math.PI);
+  bufferCtx.lineWidth = 5;
+  bufferCtx.strokeStyle = '#fff';
+  bufferCtx.stroke();
 }
 
-/* canvas sizing */
-function ajustarCanvas(){
-  const t = Math.min(window.innerWidth * 0.8, 700);
-  canvas.width = t;
-  canvas.height = t;
-  desenhar();
+/* efficient draw: rotate buffer onto visible canvas; optionally draw highlight wedge */
+function desenhar(d = -1, b = 1){
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(angulo);
+  ctx.drawImage(bufferCanvas, -w/2, -h/2);
+  // draw highlight if needed (uses same rotation frame)
+  if(d >= 0 && nomes.length){
+    const t = nomes.length;
+    const ap = 2*Math.PI / t;
+    const r = Math.min(w,h)/2 - 6;
+    const ini = d*ap;
+
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,r,ini,ini+ap);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(255,255,0,${b})`;
+    ctx.fill();
+
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
-window.addEventListener('resize', ajustarCanvas);
+/* tick detection - inexpensive */
+function tick(){
+  const t = nomes.length;
+  if(!t) return;
+
+  const ap = 2*Math.PI / t;
+  const arrow = 3*Math.PI/2;
+
+  const rel = ((arrow - angulo) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  const s = Math.floor(rel / ap);
+
+  if(ultimo === null){
+    ultimo = s;
+    return;
+  }
+
+  if(s !== ultimo){
+    playTick();
+    ultimo = s;
+  }
+}
+
+/* spin loop using requestAnimationFrame and delta-time scaling */
+function girar(){
+  if(nomes.length < 1){
+    alert('Adicione pelo menos um nome.');
+    return;
+  }
+  if(girando) return;
+
+  overlay.classList.remove('mostrar');
+
+  dur = (parseInt(tempo.value) || 5) * 1000;
+
+  // keep same distribution as before (base number), but we'll scale with dt
+  vel = Math.random()*0.35 + 0.5;
+  girando = true;
+  ultimo = null;
+
+  const inicio = performance.now();
+  let last = inicio;
+
+  function loop(now){
+    const delta = now - last;
+    last = now;
+    const d = now - inicio;
+
+    // scale factor so behavior resembles previous setInterval(18ms) steps
+    const scale = delta / 18;
+
+    if(d < dur * 0.65){
+      angulo += vel * scale;
+    } else if(d < dur){
+      // smooth slow down phase: reduce velocity gradually
+      vel *= Math.pow(0.98, scale);
+      angulo += vel * scale;
+    } else {
+      // finished spinning main phase
+      girando = false;
+      // proceed to smooth deceleration routine (suave) which uses rAF internally
+      suave();
+      return;
+    }
+
+    tick();
+    desenhar();
+    giroFrameId = requestAnimationFrame(loop);
+  }
+
+  giroFrameId = requestAnimationFrame(loop);
+}
+
+/* parar (stop) - cancels active spin loop and enters suave */
+function parar(){
+  if(girando){
+    if(giroFrameId) cancelAnimationFrame(giroFrameId);
+    girando = false;
+    suave();
+  }
+}
+
+/* desaceleração suave (keeps requestAnimationFrame) */
+function suave(){
+  // ensure vel still has some value; if not, set small random so loop runs a few frames
+  if(vel <= 0) vel = 0.001;
+
+  function step(){
+    // delta-time approximation using fixed 18ms baseline
+    vel *= 0.986;
+    if(vel < 0.0005) vel = 0;
+    angulo += vel;
+
+    tick();
+    desenhar();
+
+    if(vel > 0){
+      animFrameId = requestAnimationFrame(step);
+    } else {
+      // finalized stop
+      if(animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+      girando = false;
+
+      const t = nomes.length;
+      if(!t) return;
+
+      const ap = 2*Math.PI / t;
+      const arrow = 3*Math.PI/2;
+
+      const rel = ((arrow - angulo) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+      const i = Math.floor(rel / ap);
+      const v = nomes[i];
+
+      playStopSound();
+
+      somVencedor.currentTime = 0;
+      somVencedor.play().catch(()=>{});
+
+      // highlight + show winner
+      destacar(i);
+      mostrarVencedor(v);
+    }
+  }
+  animFrameId = requestAnimationFrame(step);
+}
+
+/* destaque animado - mantém o efeito original (pisca 3x) */
+function destacar(i){
+  let b = 1, desc = true, rp = 0;
+
+  function anim(){
+    desenhar(i,b);
+
+    if(desc) b -= 0.1;
+    else b += 0.1;
+
+    if(b <= 0.3){
+      desc = false;
+      rp++;
+    }
+
+    if(b >= 1 && !desc){
+      desc = true;
+    }
+
+    if(rp < 3)
+      requestAnimationFrame(anim);
+    else
+      desenhar();
+  }
+  requestAnimationFrame(anim);
+}
 
 /* UI update */
 function atualizar(){
@@ -208,6 +431,7 @@ function remover(i){
   nomes.splice(i,1);
   cores.splice(i,1);
   salvar();
+  gerarBuffer();
   desenhar();
   atualizar();
 }
@@ -237,182 +461,33 @@ function adicionar(){
   qtd.value = 1;
 
   salvar();
+  gerarBuffer();
   desenhar();
   atualizar();
 }
 
-/* desenho da roleta */
-function desenhar(d=-1,b=1){
-  const w = canvas.width, h = canvas.height;
-  const cx = w/2, cy = h/2;
-  const r = Math.min(w,h)/2 - 6;
+function embaralhar(){
+  // Fisher-Yates Shuffle mantendo a cor correspondente
+  for(let i = nomes.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
 
-  ctx.clearRect(0,0,w,h);
+    // troca nomes
+    const tmpNome = nomes[i];
+    nomes[i] = nomes[j];
+    nomes[j] = tmpNome;
 
-  const t = nomes.length;
-  if(!t){
-    ctx.beginPath();
-    ctx.arc(cx,cy,r,0,2*Math.PI);
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = '#fff';
-    ctx.stroke();
-    return;
+    // troca cores
+    const tmpCor = cores[i];
+    cores[i] = cores[j];
+    cores[j] = tmpCor;
   }
 
-  const ap = 2*Math.PI / t;
-
-  for(let i=0;i<t;i++){
-    const ini = angulo + i*ap;
-    ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,r,ini,ini+ap);
-    ctx.closePath();
-    ctx.fillStyle = (i===d)?`rgba(255,255,0,${b})`:cores[i];
-    ctx.fill();
-
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(ini + ap/2);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#000';
-    
-    let nm = nomes[i];
-    ctx.font = `bold ${(nm.length>18)?12:16}px Arial`;
-    if(nm.length>24) nm = nm.slice(0,21) + '...';
-    ctx.fillText(nm, r-45, 8);
-
-    ctx.restore();
-  }
-
-  ctx.beginPath();
-  ctx.arc(cx,cy,r,0,2*Math.PI);
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = '#fff';
-  ctx.stroke();
+  salvar();
+  gerarBuffer();
+  desenhar();
+  atualizar();
 }
 
-/* tick deteccao */
-function tick(){
-  const t = nomes.length;
-  if(!t) return;
-
-  const ap = 2*Math.PI / t;
-  const arrow = 3*Math.PI/2;
-
-  const rel = ((arrow - angulo) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
-  const s = Math.floor(rel / ap);
-
-  if(ultimo === null){
-    ultimo = s;
-    return;
-  }
-
-  if(s !== ultimo){
-    playTick();
-    ultimo = s;
-  }
-}
-
-/* girar */
-function girar(){
-  if(nomes.length < 1){
-    alert('Adicione pelo menos um nome.');
-    return;
-  }
-  if(girando) return;
-
-  overlay.classList.remove('mostrar');
-
-  dur = (parseInt(tempo.value) || 5) * 1000;
-
-  vel = Math.random()*0.35 + 0.5;
-  girando = true;
-  ultimo = null;
-
-  const ini = Date.now();
-
-  intv = setInterval(()=>{
-    const d = Date.now() - ini;
-    if(d < dur*0.65){
-      angulo += vel;
-    } else if(d < dur){
-      vel *= 0.98;
-      angulo += vel;
-    } else {
-      clearInterval(intv);
-      suave();
-      return;
-    }
-    tick();
-    desenhar();
-  }, 18);
-}
-
-/* desaceleração suave */
-function suave(){
-  let step = ()=>{
-    vel *= 0.980;
-    if(vel < 0.0005) vel = 0;
-    angulo += vel;
-
-    tick();
-    desenhar();
-
-    if(vel > 0){
-      requestAnimationFrame(step);
-    } else {
-      girando = false;
-
-      const t = nomes.length;
-      const ap = 2*Math.PI / t;
-      const arrow = 3*Math.PI/2;
-
-      const rel = ((arrow - angulo) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
-      const i = Math.floor(rel / ap);
-      const v = nomes[i];
-
-      playStopSound();
-
-      somVencedor.currentTime = 0;
-      somVencedor.play().catch(()=>{});
-      
-      destacar(i);
-      mostrarVencedor(v);
-    }
-  };
-  requestAnimationFrame(step);
-}
-
-/* destaque animado */
-function destacar(i){
-  let b = 1, d = true, rp = 0;
-
-  function anim(){
-    desenhar(i,b);
-
-    if(d) b -= 0.1;
-    else b += 0.1;
-
-    if(b <= 0.3){
-      d = false;
-      rp++;
-    }
-
-    if(b >= 1 && !d){
-      d = true;
-    }
-
-    if(rp < 3)
-      requestAnimationFrame(anim);
-    else
-      desenhar();
-  }
-  requestAnimationFrame(anim);
-}
 
 /* vencedores */
 function atualizarVencedores(){
@@ -454,12 +529,13 @@ function limpar(){
   cores = [];
   localStorage.removeItem(PREFIX+'nomes');
   localStorage.removeItem(PREFIX+'cores');
+  gerarBuffer();
   desenhar();
   atualizar();
   overlay.classList.remove('mostrar');
 }
 
-/* CSV */
+/* CSV import/export */
 document.getElementById('btnImportar').onclick = () => csv.click();
 
 csv.addEventListener('change', () => {
@@ -492,6 +568,7 @@ csv.addEventListener('change', () => {
     }
 
     salvar();
+    gerarBuffer();
     desenhar();
     atualizar();
     csv.value = '';
@@ -530,13 +607,9 @@ document.getElementById('btnExportar').onclick = () => {
 
 /* eventos */
 document.getElementById('btnAdicionar').onclick = adicionar;
+document.getElementById('btnEmbaralhar').onclick = embaralhar;
 document.getElementById('btnIniciar').onclick = girar;
-document.getElementById('btnParar').onclick = ()=>{
-  if(girando){
-    clearInterval(intv);
-    suave();
-  }
-};
+document.getElementById('btnParar').onclick = parar;
 document.getElementById('btnLimpar').onclick = limpar;
 document.getElementById('btnFullscreen').onclick = ()=>{
   if(!document.fullscreenElement)
@@ -560,8 +633,33 @@ nome.addEventListener('keyup', e => {
 /* expose */
 window.remover = remover;
 
-/* init */
+/* init/load */
+function carregar(){
+  const n = JSON.parse(localStorage.getItem(PREFIX+'nomes') || '[]');
+  const c = JSON.parse(localStorage.getItem(PREFIX+'cores') || '[]');
+
+  nomes = n;
+  cores = (c.length === n.length) ? c : n.map(()=>corAleatoria());
+
+  // regenerate buffer and UI
+  gerarBuffer();
+  desenhar();
+  atualizar();
+  atualizarVencedores();
+}
+
+/* canvas sizing */
+function ajustarCanvas(){
+  const t = Math.min(window.innerWidth * 0.8, 700);
+  // keep integer widths for crisp drawing
+  const size = Math.floor(t);
+  canvas.width = size;
+  canvas.height = size;
+  gerarBuffer();
+  desenhar();
+}
+window.addEventListener('resize', ajustarCanvas);
+
+/* startup */
 ajustarCanvas();
 carregar();
-
-
