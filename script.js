@@ -35,7 +35,7 @@ let vencedores = JSON.parse(localStorage.getItem(PREFIX+'vencedores') || '[]');
 
 /* som de vencedor */
 const somVencedor = new Audio("vencedor.mp3");
-somVencedor.volume = 0.4; // ajuste se quiser
+somVencedor.volume = 0.100; // ajuste se quiser
 
 function corAleatoria(){
   return `hsl(${Math.floor(Math.random()*360)},75%,60%)`;
@@ -663,5 +663,6 @@ window.addEventListener('resize', ajustarCanvas);
 /* startup */
 ajustarCanvas();
 carregar();
+
 
 
