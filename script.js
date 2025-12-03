@@ -12,12 +12,36 @@ const lista = document.getElementById('listaNomes');
 const csv = document.getElementById('inputCSV');
 
 const paletaNeutra = [
-  "#e0e0e0", "#cfcfcf", "#bdbdbd", "#9e9e9e",
-  "#8d8d8d", "#7d7d7d", "#6e6e6e", "#5e5e5e","#faf8f5", "#f2eee8", "#e9e4da", "#ded7cc",
+  // Cinzas claros
+  "#fafafa", "#f5f5f5", "#f0f0f0", "#ebebeb",
+  "#e0e0e0", "#d7d7d7", "#cfcfcf", "#c7c7c7",
+  "#bdbdbd", "#b3b3b3", "#a9a9a9", "#9e9e9e",
+
+  // Cinzas médios
+  "#8f8f8f", "#858585", "#7d7d7d", "#757575",
+  "#6e6e6e", "#666666", "#5e5e5e",
+
+  // Cinzas quentes / areia
+  "#faf8f5", "#f2eee8", "#e9e4da", "#ded7cc",
   "#d2cbbe", "#c7c0b4", "#bcb5a9", "#b0a99f",
-  "#a59e95", "#9a938a", "#8f887f", "#847d75","#f2f4f7", "#e6e9ed", "#d9dde2", "#ccd1d6",
-  "#c0c5cb", "#b3b9c0", "#a7adb4", "#9aa1a9",
-  "#8e959d", "#828992", "#767d86", "#6a717a"
+  "#a59e95", "#9a938a", "#8f887f", "#847d75",
+  "#7a6f6a", "#6f645e", "#645952", "#5a4f48",
+
+  // Tons gelo / azuis neutros
+  "#f2f4f7", "#eceff2", "#e6e9ed", "#dfe3e8",
+  "#d9dde2", "#d1d6dc", "#ccd1d6", "#c5cbd2",
+  "#c0c5cb", "#b8bfc7", "#b3b9c0", "#adb3ba",
+  "#a7adb4", "#a1a7ae", "#9aa1a9", "#949aa3",
+  "#8e959d", "#878e96", "#828992", "#7b828b",
+  "#767d86", "#707780", "#6a717a", "#646b74",
+
+  // neutros suaves adicionais
+  "#fbfaf8", "#f8f6f3", "#f3f1ed", "#eeeae6",
+  "#e9e5df", "#e3ded8", "#ddd8d2", "#d7d2cc",
+
+  // Tons taupe suaves adicionais
+  "#cfc7c0", "#c6beb7", "#bdb5ae", "#b4aca5",
+  "#aba39c", "#a29a93", "#999089", "#908781"
 ];
 
 /* state */
@@ -663,6 +687,7 @@ window.addEventListener('resize', ajustarCanvas);
 /* startup */
 ajustarCanvas();
 carregar();
+
 
 
 
