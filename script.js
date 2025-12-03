@@ -40,16 +40,16 @@ const paletaNeutra = [
   "#e9e5df", "#e3ded8", "#ddd8d2", "#d7d2cc",
 
   // Tons taupe suaves adicionais
-  "#cfc7c0", "#c6beb7", "#bdb5ae", "#b4aca5",
-  "#aba39c", "#a29a93", "#999089", "#908781"
+  "#cfc7c0", "#e2ae81ff", "#bdb5ae", "#5b68a7ff",
+  "#aba39c", "#a29a93", "#84481bff", "#908781"
 ];
 
 /* state */
 let nomes = [];
 let cores = [];
-let angulo = 0;             // radians
+let angulo = 0;             // radianos
 let girando = false;
-let vel = 0;                // base velocity units (interpreted relative to 18ms frame)
+let vel = 0;                // unidade base de velocidade (interpretada em relação ao frame de 18ms)
 let dur = 5000;
 let ultimo = null;
 let audioCtx = null;
@@ -369,7 +369,7 @@ function parar(){
   }
 }
 
-/* desaceleração suave (keeps requestAnimationFrame) */
+/* desaceleração suave  */
 function suave(){
   // ensure vel still has some value; if not, set small random so loop runs a few frames
   if(vel <= 0) vel = 0.001;
@@ -447,7 +447,7 @@ function atualizar(){
     const d = document.createElement('div');
     d.className = 'tagNome';
     d.innerHTML = `${nm} <button onclick="remover(${i})">×</button>`;
-    lista.appendChild(d);
+    lista.appendChild(d);    
   });
 }
 
@@ -487,7 +487,9 @@ function adicionar(){
   salvar();
   gerarBuffer();
   desenhar();
+  embaralhar();
   atualizar();
+  
 }
 
 function embaralhar(){
