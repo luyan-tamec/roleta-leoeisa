@@ -12,7 +12,7 @@
       top: 20px;
       left: 20px;
       padding: 10px 10px;
-      background: rgb(239, 10, 209,0.5);
+      background: rgb(239, 10, 209, 0.5);
       color: #fff;
       text-decoration: none;
       border-radius: 15px;
@@ -26,7 +26,7 @@
       top: 70px;
       left: 20px;
       padding: 10px 5px;
-      background: rgb(239, 10, 209,0.5);
+      background: rgb(239, 10, 209, 0.5);
       color: #fff;
       text-decoration: none;
       border-radius: 15px;
@@ -36,16 +36,22 @@
     }
 
     .cartao {
-      background-color: rgb(116, 116, 116, 0.3);
-      border: solid 2px rgb(255, 252, 252, 0.3);
+      background-color: rgba(16, 10, 10, 0.300);
+      border: solid 2px rgba(174, 159, 159, 0.795);
       border-radius: 30px;
       margin: 20px;
     }
-    .btnembaralhar {
-      background-color:  rgba(219, 109, 14, 0.854);
-      
+    .cartaonomes {
+      background-color: rgba(16, 10, 10, 0.836);
+      border: solid 2px rgba(174, 159, 159, 0.795);
+      border-radius: 30px;
+      margin: 20px;
     }
-    
+
+    .btnembaralhar {
+      background-color: rgba(219, 109, 14, 0.854);
+
+    }
   </style>
 </head>
 
@@ -59,7 +65,7 @@
       <h1 id="titulo" style="margin:20px">Roleta Rindo e Apoiando!!</h1>
       <div class="cartao">
         <div class="controls">
-          <button id="btnTema">Tema</button>  
+          <button id="btnTema">Tema</button>
           <select id="modoCor">
             <option value="colorido" selected>🏳‍🌈 cores do vale</option>
             <option value="neutro">⚪ cores Neutras</option>
@@ -103,8 +109,10 @@
         <button id="btnLimparVencedores" style="margin-top:8px;background:#e53935;color:#fff;height:35px;">🗑️ Limpar
           Vencedores</button>
       </div>
+      <div class="cartaonomes">
+        <div id="listaNomes"></div>
+      </div>
 
-      <div id="listaNomes"></div>
     </div>
 
     <div id="container">

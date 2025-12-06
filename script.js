@@ -457,6 +457,7 @@ function remover(i){
   salvar();
   gerarBuffer();
   desenhar();
+  embaralhar();
   atualizar();
 }
 

@@ -152,9 +152,9 @@ canvas {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.8);
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.9);
   padding: 16px 28px;
-  border-radius: 18px;
+  border-radius: 20px;
   font-size: 2rem;
   font-weight: 800;
   color: #fff;
@@ -177,7 +177,7 @@ canvas {
   }
 
   #resultadoOverlay {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     padding: 10px 16px;
   }
 }

@@ -48,9 +48,9 @@ body::after {
 
 h1 {
   font-size: 2rem;
-  margin-bottom: 10px;
+  margin-bottom: 7px;
   text-align: center;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+  text-shadow: 10px 10px 19px rgba(239, 234, 238, 0.9);
 }
 
 .controls,
@@ -75,7 +75,7 @@ select {
 
 button {
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: none;
   cursor: pointer;
   background: var(--accent);
@@ -85,7 +85,7 @@ button {
   transition: transform .12s ease;
 }
 
-button:hover { transform: translateY(-2px); }
+button:hover { transform: scale(1.1); }
 
 #listaNomes {
   display: flex;
@@ -98,16 +98,16 @@ button:hover { transform: translateY(-2px); }
 .tagNome {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 6px 10px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
 }
 
 .tagNome button {
-  background: #e53935;
-  color: #fff;
+  background: #d61515;
+  color: #fffbfb;
   border: none;
   border-radius: 50%;
   width: 20px;
@@ -124,6 +124,12 @@ button:hover { transform: translateY(-2px); }
   justify-content: center;
   align-items: center;
 }
+#container:hover  {
+  transform: scale(1.010);
+  transition: transform .2s ease;
+  cursor: pointer;
+
+}
 
 .seta {
   position: absolute;
@@ -138,11 +144,16 @@ button:hover { transform: translateY(-2px); }
 
 canvas {
   border-radius: 50%;
-  border: 5px solid #fff;
+  border: 2px solid #fff;
   width: min(90vw, 500px);
   aspect-ratio: 1 / 1;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.031);
   box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+canvas:hover {
+  border-color: #e012d6;
+  box-shadow: 0 0 90px #f0e7ef;
+  cursor: pointer;
 }
 
 #resultadoOverlay {
@@ -205,6 +216,7 @@ canvas {
 body.tema-claro {
   background: #FF4DA6;
   color: #FF4DA6;
+  
      
 }
 
@@ -220,6 +232,9 @@ body.tema-claro button {
 
 body.tema-claro canvas {
   border-color: #FF4DA6;
+  border-color: #e012d6;
+  box-shadow: 0 0 90px #f0e7ef;
+  cursor: pointer;
 }
 
 body.tema-claro #resultadoOverlay {

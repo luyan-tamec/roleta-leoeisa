@@ -19,12 +19,13 @@ const twitchStatus = document.getElementById('twitchStatus');
 /* estado */
 let nomes = [];
 let cores = [];
-let angulo = 0;
+let angulo = 0;            // ângulo atual em radianos
 let girando = false;
 let vel = 0;
-let intv;
-let dur = 5000;
-let ultimo = null;
+let dur = 5000;            //   duração do giro em ms
+let iniciadoEm = 0;
+let estado = 'idle';       // 'idle' | 'spinning' | 'slowing' | 'highlight'
+let ultimoSetor = null;
 let audioCtx = null;
 
 let clientTMI = null;
@@ -46,19 +47,18 @@ let vencedores = JSON.parse(localStorage.getItem(PREFIX+'vencedores') || '[]');
 /* modo de cor salvo */
 let modoCor = localStorage.getItem(PREFIX+"modoCor") || "colorido";
 const modoCorSelect = document.getElementById("modoCor");
-
 if (modoCorSelect) {
   modoCorSelect.value = modoCor;
   modoCorSelect.addEventListener("change", () => {
     modoCor = modoCorSelect.value;
     localStorage.setItem(PREFIX+"modoCor", modoCor);
+    gerarRoletaEstaticaDebounced();
   });
 }
 
 /* tema */
 let tema = localStorage.getItem(PREFIX+"tema") || "escuro";
 const btnTema = document.getElementById("btnTema");
-
 function aplicarTema(){
   if(tema === "claro"){
     document.body.classList.add("tema-claro");
@@ -124,7 +124,7 @@ if(btnMusica){
       musica.play().then(()=>{
         tocandoMusica = true;
         btnMusica.textContent = '⏸ Parar Música';
-      });
+      }).catch(()=>{});
     } else {
       musica.pause();
       tocandoMusica = false;
@@ -133,7 +133,7 @@ if(btnMusica){
   });
 }
 
-/* áudio */
+/* audio context */
 function ensureAudioContext(){
   if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -185,9 +185,9 @@ function salvar(){
 function carregar(){
   nomes = JSON.parse(localStorage.getItem(PREFIX+'nomes') || '[]');
   cores = JSON.parse(localStorage.getItem(PREFIX+'cores') || '[]');
-  if(cores.length !== nomes.length) cores = nomes.map(()=>corAleatoria());
+  if(cores.length !== nomes.length) cores = nomes.map(()=> modoCor === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random()*paletaNeutra.length)]);
   atualizar();
-  desenhar();
+  gerarRoletaEstatica();
   atualizarVencedores();
 }
 
@@ -199,108 +199,261 @@ function adicionar(){
 
   for(let i=0;i<q;i++){
     nomes.push(n);
-
     if(modoCor === "colorido") cores.push(corAleatoria());
     else cores.push(paletaNeutra[Math.floor(Math.random()*paletaNeutra.length)]);
   }
 
   nome.value=''; qtd.value=1;
-  salvar(); atualizar(); desenhar();
+  salvar(); atualizar(); gerarRoletaEstaticaDebounced();
 }
-
 function remover(i){
   nomes.splice(i,1);
   cores.splice(i,1);
-  salvar(); atualizar(); desenhar();
+  salvar(); atualizar(); gerarRoletaEstaticaDebounced();
 }
 window.remover = remover;
 
-/* atualizar lista UI */
+/* atualizar lista UI - usa fragment para performance */
 function atualizar(){
   lista.innerHTML = "";
-  nomes.forEach((nm,i)=>{
+  if(!nomes.length) return;
+  const frag = document.createDocumentFragment();
+  for(let i=0;i<nomes.length;i++){
+    const nm = nomes[i];
     const d = document.createElement('div');
     d.className = 'tagNome';
-    d.innerHTML = `${nm} <button onclick="remover(${i})">×</button>`;
-    lista.appendChild(d);
+    const btn = document.createElement('button');
+    btn.textContent = '×';
+    btn.onclick = (() => (idx => () => remover(idx))(i))();
+    d.textContent = nm + ' ';
+    d.appendChild(btn);
+    frag.appendChild(d);
+  }
+  lista.appendChild(frag);
+}
+
+/* --- Offscreen static canvas (desenho pesado apenas quando lista muda) --- */
+let staticCanvas = document.createElement('canvas');
+let staticCtx = staticCanvas.getContext('2d');
+let staticReady = false;
+
+/* cache de labels para reduzir operações durante geração */
+let labelCache = []; // cada item: {text: 'Nome...', fontSize: 16, short: 'Nom...'}
+
+function gerarLabelCache(){
+  labelCache = nomes.map(nm => {
+    const short = (nm.length > 24) ? nm.slice(0,21) + '...' : nm;
+    const fontSize = (nm.length > 18) ? 12 : 16;
+    return { raw: nm, short, fontSize };
   });
 }
 
-/* desenho da roleta */
-function desenhar(dest=-1, brilho=1){
-  const w = canvas.width, h = canvas.height;
-  const cx = w/2, cy = h/2;
-  const r = Math.min(w,h)/2 - 6;
+/* ajustar canvas para DPI e tamanho responsivo */
+function ajustarCanvas(){
+  // define um tamanho visual e um tamanho real considerando devicePixelRatio
+  const visual = Math.min(window.innerWidth * 0.8, 500);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = visual + 'px';
+  canvas.style.height = visual + 'px';
+  canvas.width = Math.round(visual * dpr);
+  canvas.height = Math.round(visual * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // normaliza contexto para coordenadas CSS
+  // também atualiza offscreen canvas proporção
+  staticCanvas.width = canvas.width;
+  staticCanvas.height = canvas.height;
+  staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // quando o tamanho muda, precisamos regenerar
+  gerarRoletaEstaticaDebounced();
+}
+window.addEventListener('resize', debounce(ajustarCanvas, 120));
 
-  ctx.clearRect(0,0,w,h);
+/* função debounced para não gerar estática repetidamente */
+const gerarRoletaEstaticaDebounced = debounce(gerarRoletaEstatica, 120);
+
+/* gerar a roleta no canvas offscreen - operação pesada, executada só quando lista muda */
+function gerarRoletaEstatica(){
+  const w = canvas.width, h = canvas.height;
+  // se canvas ainda não recebeu dimensões calculadas, adie
+  if(!w || !h){ staticReady = false; return; }
+
+  const cssW = parseFloat(canvas.style.width) || w;
+  const cssH = parseFloat(canvas.style.height) || h;
+  const cx = cssW/2, cy = cssH/2;
+  const r = Math.min(cssW, cssH)/2 - 6;
+
+  staticCtx.clearRect(0,0,cssW,cssH);
 
   if(!nomes.length){
+    staticReady = false;
+    return;
+  }
+
+  gerarLabelCache();
+
+  const total = nomes.length;
+  const ap = 2 * Math.PI / total;
+
+  // desenhar slices
+  for (let i = 0; i < total; i++){
+    const ini = i * ap;
+    staticCtx.beginPath();
+    staticCtx.moveTo(cx, cy);
+    staticCtx.arc(cx, cy, r, ini, ini + ap);
+    staticCtx.closePath();
+
+    staticCtx.fillStyle = cores[i] || (modoCor === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random()*paletaNeutra.length)]);
+    staticCtx.fill();
+
+    staticCtx.lineWidth = 1;
+    staticCtx.strokeStyle = '#222';
+    staticCtx.stroke();
+
+    // texto: desenhado girado diretamente no offscreen
+    staticCtx.save();
+    staticCtx.translate(cx, cy);
+    staticCtx.rotate(ini + ap/2);
+
+    staticCtx.textAlign = 'right';
+    staticCtx.fillStyle = '#000';
+    const cache = labelCache[i];
+    staticCtx.font = `bold ${cache.fontSize}px Arial`;
+    staticCtx.fillText(cache.short, r - 45, 8);
+
+    staticCtx.restore();
+  }
+
+  // círculo externo
+  staticCtx.beginPath();
+  staticCtx.arc(cx, cy, r, 0, 2*Math.PI);
+  staticCtx.lineWidth = 5;
+  staticCtx.strokeStyle = (tema==='claro') ? '#000' : '#fff';
+  staticCtx.stroke();
+
+  staticReady = true;
+}
+
+/* desenhar função leve (chamada a cada frame) */
+function desenhar(dest=-1, brilho=1){
+  const cssW = parseFloat(canvas.style.width) || canvas.width;
+  const cssH = parseFloat(canvas.style.height) || canvas.height;
+  const cx = cssW/2, cy = cssH/2;
+  ctx.clearRect(0,0,cssW,cssH);
+
+  if(staticReady){
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angulo);
+    // drawImage com as dimensões CSS (offscreen também em CSS coords)
+    ctx.drawImage(staticCanvas, -cx, -cy, cssW, cssH);
+    ctx.restore();
+  } else {
+    // fallback: desenha um círculo vazio
     ctx.beginPath();
+    const r = Math.min(cssW, cssH)/2 - 6;
     ctx.arc(cx,cy,r,0,2*Math.PI);
     ctx.lineWidth = 6;
     ctx.strokeStyle = (tema === 'claro') ? '#000' : '#fff';
     ctx.stroke();
-    return;
   }
 
-  const total = nomes.length;
-  const ap = 2*Math.PI / total;
-
-  for(let i=0;i<total;i++){
-    const ini = angulo + i*ap;
-    ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,r,ini,ini+ap);
-    ctx.closePath();
-
-    ctx.fillStyle = (i===dest)?`rgba(255,255,0,${brilho})`:cores[i];
-    ctx.fill();
-
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(ini + ap/2);
-    ctx.textAlign='right';
-    ctx.fillStyle = '#000';
-
-    let nm = nomes[i];
-    ctx.font = `bold ${(nm.length>18)?12:16}px Arial`;
-    if(nm.length>24) nm = nm.slice(0,21) + '...';
-
-    ctx.fillText(nm, r-45, 8);
-    ctx.restore();
-  }
-
+  // borda (sempre)
+  const r = Math.min(cssW, cssH)/2 - 6;
   ctx.beginPath();
   ctx.arc(cx,cy,r,0,2*Math.PI);
   ctx.lineWidth = 5;
   ctx.strokeStyle = (tema==='claro') ? '#000' : '#fff';
   ctx.stroke();
-}
 
-/* tick detector */
-function tick(){
-  if(!nomes.length) return;
+  // destaque (overlay) — 
+  if(dest >= 0 && nomes.length){
+    const total = nomes.length;
+    const ap = 2*Math.PI / total;
+    const ini = dest * ap;
 
-  const total = nomes.length;
-  const ap = 2*Math.PI / total;
-  const arrow = 3*Math.PI/2;
-
-  const rel = ((arrow - angulo) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
-  const s = Math.floor(rel / ap);
-
-  if(ultimo === null){ ultimo = s; return; }
-
-  if(s !== ultimo){
-    playTick();
-    ultimo = s;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angulo + ini);
+    ctx.fillStyle = `rgba(255,255,0,${brilho})`;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,r,0,ap);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
   }
 }
 
-/* girar */
+/* tick detector otimizado (sem operações extras) */
+function tickDetector(){
+  if(!nomes.length) return;
+  const total = nomes.length;
+  const ap = 2*Math.PI / total;
+  const arrow = 3*Math.PI/2; // posição fixa da seta
+  const rel = ((arrow - angulo) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  const s = Math.floor(rel / ap);
+  if(ultimoSetor === null){ ultimoSetor = s; return; }
+  if(s !== ultimoSetor){
+    // trocou de setor -> tick
+    playTick();
+    ultimoSetor = s;
+  }
+}
+
+/* animação principal (requestAnimationFrame) */
+let rafId = null;
+function iniciarLoop(){
+  if(rafId) return;
+  let lastTS = performance.now();
+  function loop(ts){
+    const dt = ts - lastTS;
+    lastTS = ts;
+
+    if(estado === 'spinning'){
+      const elapsed = Date.now() - iniciadoEm;
+      if(elapsed < dur*0.65){
+        angulo += vel * (dt / 16.67); // escalar por delta (suaviza em variações de framerate)
+      } else if(elapsed < dur){
+        // desaceleração suave
+        vel *= 0.995;
+        angulo += vel * (dt / 16.67);
+      } else {
+        estado = 'slowing';
+      }
+      tickDetector();
+      desenhar();
+    } else if(estado === 'slowing'){
+      // usar multiplicador para desaceleração final
+      vel *= 0.986;
+      if(Math.abs(vel) < 0.0005) vel = 0;
+      angulo += vel * (dt / 16.67);
+      tickDetector();
+      desenhar();
+      if(Math.abs(vel) === 0){
+        // terminou
+        estado = 'idle';
+        girando = false;
+        finalizarGiro();
+      }
+    } else if(estado === 'highlight'){
+      // durante highlight, manter desenhando highlight animado (controlado por destacar)
+      // destacar() usa requestAnimationFrame por conta própria
+      desenhar();
+    } else {
+      // idle -> pouco trabalho, apenas desenhar se necessário
+      // mas mantemos desenhar para refletir eventuais overlay
+      desenhar();
+    }
+
+    rafId = requestAnimationFrame(loop);
+  }
+  rafId = requestAnimationFrame(loop);
+}
+function pararLoop(){
+  if(rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+}
+
+/* iniciar giro */
 function girar(){
   if(nomes.length < 1){ alert('Adicione pelo menos um nome.'); return; }
   if(girando) return;
@@ -308,59 +461,38 @@ function girar(){
   overlay.classList.remove('mostrar');
   dur = (parseInt(tempo.value) || 5) * 1000;
 
-  vel = Math.random()*0.35 + 0.5;
+  // velocidade inicial aleatória (ajustada para sensação)
+  vel = (Math.random()*0.35 + 0.5);
   girando = true;
-  ultimo = null;
+  estado = 'spinning';
+  iniciadoEm = Date.now();
+  ultimoSetor = null;
 
-  const ini = Date.now();
-
-  intv = setInterval(()=>{
-    const d = Date.now() - ini;
-
-    if(d < dur*0.65) angulo += vel;
-    else if(d < dur){ vel *= 0.98; angulo += vel; }
-    else { clearInterval(intv); suave(); return; }
-
-    tick();
-    desenhar();
-  }, 18);
+  // garante loop ativo
+  iniciarLoop();
 }
 
-function suave(){
-  let step = () => {
-    vel *= 0.986;
-    if(vel < 0.0005) vel = 0;
+/* quando o giro termina, decidir vencedor e tocar som */
+function finalizarGiro(){
+  const total = nomes.length;
+  const ap = 2*Math.PI / total;
+  const arrow = 3*Math.PI/2;
 
-    angulo += vel;
-    tick();
-    desenhar();
+  const rel = ((arrow - angulo) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  const i = Math.floor(rel / ap);
+  const v = nomes[i];
 
-    if(vel > 0) requestAnimationFrame(step);
-    else {
-      girando = false;
-
-      const total = nomes.length;
-      const ap = 2*Math.PI / total;
-      const arrow = 3*Math.PI/2;
-
-      const rel = ((arrow - angulo) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
-      const i = Math.floor(rel / ap);
-      const v = nomes[i];
-
-      playStopSound();
-      destacar(i);
-      mostrarVencedor(v);
-    }
-  };
-
-  requestAnimationFrame(step);
+  playStopSound();
+  destacar(i);
+  mostrarVencedor(v);
 }
 
+/* destacar vencedor (animação simples, roda por conta própria) */
 function destacar(i){
-  let b=1,d=true,rp=0;
-
+  estado = 'highlight';
+  let b = 1, d = true, rp = 0;
   function anim(){
-    desenhar(i,b);
+    desenhar(i, b);
 
     if(d) b -= 0.1;
     else b += 0.1;
@@ -372,13 +504,15 @@ function destacar(i){
     if(b >= 1 && !d) d = true;
 
     if(rp < 3) requestAnimationFrame(anim);
-    else desenhar();
+    else {
+      desenhar();
+      estado = 'idle';
+    }
   }
-
   requestAnimationFrame(anim);
 }
 
-/* vencedores */
+/* mostrar overlay e armazenar vencedor */
 function mostrarVencedor(nm){
   overlay.textContent = ` 👉${nm}👈 `;
   overlay.classList.remove('mostrar');
@@ -386,7 +520,6 @@ function mostrarVencedor(nm){
   overlay.classList.add('mostrar');
 
   clearTimeout(overlay._timeoutId);
-
   overlay._timeoutId = setTimeout(()=>{
     overlay.classList.remove('mostrar');
     overlay.textContent='';
@@ -396,21 +529,20 @@ function mostrarVencedor(nm){
   salvarVencedores();
 }
 
+/* vencedores UI */
 function atualizarVencedores(){
   const div = document.getElementById('listaVencedores');
   if(!div) return;
-
   div.innerHTML = '';
-
+  const frag = document.createDocumentFragment();
   vencedores.slice(-20).reverse().forEach(v=>{
     const span = document.createElement('span');
     span.className='vencedorTag';
-
     const date = new Date(v.when);
     span.textContent = `${v.nome} — ${date.toLocaleString()}`;
-
-    div.appendChild(span);
+    frag.appendChild(span);
   });
+  div.appendChild(frag);
 }
 
 function salvarVencedores(){
@@ -428,16 +560,15 @@ function limpar(){
   localStorage.removeItem(PREFIX+'nomes');
   localStorage.removeItem(PREFIX+'cores');
 
-  desenhar();
+  staticReady = false;
+  gerarRoletaEstaticaDebounced();
   atualizar();
   overlay.classList.remove('mostrar');
 }
 
-/* CSV import/export */
+/* CSV import/export (otimizado) */
 const btnImportar = document.getElementById('btnImportar');
-
-if(btnImportar)
-  btnImportar.addEventListener('click', ()=> csv.click());
+if(btnImportar) btnImportar.addEventListener('click', ()=> csv.click());
 
 csv.addEventListener('change', () => {
   const f = csv.files[0];
@@ -469,8 +600,8 @@ csv.addEventListener('change', () => {
     }
 
     salvar();
-    desenhar();
     atualizar();
+    gerarRoletaEstaticaDebounced();
     csv.value='';
 
     alert(`🎉 Importados ${importados.length} nomes.`);
@@ -480,7 +611,6 @@ csv.addEventListener('change', () => {
 });
 
 const btnExportar = document.getElementById('btnExportar');
-
 if(btnExportar)
   btnExportar.addEventListener('click', ()=>{
 
@@ -519,8 +649,8 @@ const btnParar = document.getElementById('btnParar');
 if(btnParar)
   btnParar.addEventListener('click', ()=>{
     if(girando){
-      clearInterval(intv);
-      suave();
+      // força finalização imediata: cancela spinning e entra em slowing
+      estado = 'slowing';
     }
   });
 
@@ -541,7 +671,6 @@ nome.addEventListener('keyup', e => {
 
 /* fullscreen */
 const btnFullscreen = document.getElementById('btnFullscreen');
-
 if(btnFullscreen)
   btnFullscreen.addEventListener('click', ()=>{
     if(!document.fullscreenElement) document.documentElement.requestFullscreen();
@@ -550,41 +679,26 @@ if(btnFullscreen)
 
 document.addEventListener('fullscreenchange', ajustarCanvas);
 
-/* canvas resizing */
-function ajustarCanvas(){
-  const t = Math.min(window.innerWidth * 0.8, 700);
-  canvas.width = t;
-  canvas.height = t;
-  desenhar();
-}
-window.addEventListener('resize', ajustarCanvas);
-
-/* script para ler o chat */
-
+/* script para ler o chat (tmi) */
 function connectTwitch(channel, keyword){
   if(!channel){
     setTwitchStatus("Informe um canal válido.");
     return;
   }
-
   if(!keyword){
     setTwitchStatus("Informe uma palavra-chave.");
     return;
   }
-
   if(clientTMI){
     try{ clientTMI.disconnect(); }catch(e){}
     clientTMI = null;
   }
-
   try {
-
     clientTMI = new tmi.Client({
       connection: { reconnect: true, secure: true },
       channels: [ channel ]
     });
 
-    /* listeners ANTES de conectar */
     clientTMI.on('message', (chan, tags, message, self) => {
       if(self) return;
       if(!message) return;
@@ -600,7 +714,9 @@ function connectTwitch(channel, keyword){
         if(['streamelements','nightbot','moobot','streamlabs'].includes(lower))
           return;
 
-        if(nomes.includes(usuario)) return;
+        // evitar duplicatas (case-insensitive)
+        const exists = nomes.some(n => n.toLowerCase() === usuario.toLowerCase());
+        if(exists) return;
 
         nomes.push(usuario);
 
@@ -611,7 +727,7 @@ function connectTwitch(channel, keyword){
 
         salvar();
         atualizar();
-        desenhar();
+        gerarRoletaEstaticaDebounced();
 
         console.log("Adicionado via Twitch:", usuario);
       }
@@ -631,7 +747,6 @@ function connectTwitch(channel, keyword){
     console.error(e);
   }
 }
-
 function disconnectTwitch(){
   if(clientTMI){
     try{ clientTMI.disconnect(); }catch(e){}
@@ -641,24 +756,20 @@ function disconnectTwitch(){
   setTwitchStatus("Desconectado");
   btnToggleTwitch.textContent = 'Conectar Twitch';
 }
-
 function setTwitchStatus(txt){
   twitchStatus.textContent = txt;
 }
 
 /* botão conectar */
 if(btnToggleTwitch){
-
   btnToggleTwitch.addEventListener('click', ()=>{
 
     const channel = (twitchChannelInput.value || '').trim();
     const keyword = (twitchKeywordInput.value || '').trim();
 
     if(!twitchConnected){
-
       localStorage.setItem(PREFIX+'twitchChannel', channel);
       localStorage.setItem(PREFIX+'twitchKeyword', keyword);
-
       connectTwitch(channel, keyword);
     } else {
       disconnectTwitch();
@@ -678,9 +789,19 @@ if(btnToggleTwitch){
     setTwitchStatus("Desconectado");
 }
 
+/* util: debounce */
+function debounce(fn, wait=100){
+  let t = null;
+  return function(...a){
+    clearTimeout(t);
+    t = setTimeout(()=> fn.apply(this, a), wait);
+  };
+}
+
 /* init */
 function init(){
   ajustarCanvas();
   carregar();
+  iniciarLoop();
 }
 init();
