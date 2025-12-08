@@ -14,9 +14,9 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: url('https://raw.githubusercontent.com/luyan-tamec/roleta-leoeisa/refs/heads/main/d9da3fab-4aec-408c-b01c-8df60aefe6e5.png')
+  background: url('leoeisa.png')
     center/cover no-repeat;
-  filter: blur(8px) brightness(0.6);
+  filter: blur(2px) brightness(0.6);
   z-index: -2;
 }
 
@@ -148,7 +148,7 @@ canvas {
   width: min(90vw, 500px);
   aspect-ratio: 1 / 1;
   background: rgba(0, 0, 0, 0.031);
-  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+  box-shadow: 0 0 18px rgba(0,0,0,0.4);
 }
 canvas:hover {
   border-color: #e012d6;
