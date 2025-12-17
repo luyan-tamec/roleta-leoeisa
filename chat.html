@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Capturador de Chat Twitch</title>
+
+<style>
+    /* ======= RESET ======= */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+    }
+
+    body {
+        background: rgba(0,0,0,0); /* fundo transparente para OBS */
+        overflow: hidden;
+    }
+
+    /* ======= CONTAINER ======= */
+    #chat-box {
+        margin-top: 10px;
+        width: 100%;
+        height: 100vh;
+        padding: 10px;
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 7px;
+        overflow: hidden;
+    }
+
+    /* ======= MENSAGEM ======= */
+    .msg {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(0,0,0);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0px 4px 20px rgba(0,0,0,0.3);
+        padding: 10px 16px;
+        border-radius: 14px;
+        opacity: 0;
+        animation: fadeIn 0.4s forwards;
+    }
+
+    /* NOME */
+    .username {
+        color: #d326b6;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    /* TEXTO */
+    .text {
+        color: #ffffff;
+        font-size: 12px;
+    }
+
+    /* ======= EMOTES ======= */
+    img.emote {
+        height: 28px;
+        margin-bottom: -6px;
+    }
+
+    /* ======= ANIMAÇÃO ======= */
+    @keyframes fadeIn {
+        from { transform: translateY(20px); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+    }
+
+</style>
+</head>
+
+<body>
+    <div id="chat-box"></div>
+
+<script src="http://luyan-tamec.github.io/roleta-isaeleo/tmi.min.js"></script>
+<script>
+/* ================================
+       CONFIGURAÇÃO DA TWITCH
+================================= */
+const canal = "loud_coringa";  // <<< coloque seu canal aqui
+
+/* ================================
+       CONEXÃO COM O TMI.JS
+================================= */
+const client = new tmi.Client({
+    connection: { reconnect: true, secure: true },
+    channels: [ canal ]
+});
+
+client.connect();
+
+/* ================================
+          RECEBER MENSAGEM
+================================= */
+
+client.on("message", (channel, tags, message, self) => {
+    addMessage(tags["display-name"], message);
+});
+
+/* ================================
+          ADICIONAR MENSAGEM
+================================= */
+
+function addMessage(username, message) {
+    const chatBox = document.getElementById("chat-box");
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "msg";
+
+    msgDiv.innerHTML = `
+        <span class="username">${username}:</span>
+        <span class="text">${convertEmotes(message)}</span>
+    `;
+
+    chatBox.prepend(msgDiv);
+
+    // remover mensagens antigas
+    if (chatBox.children.length > 25) {
+        chatBox.removeChild(chatBox.lastChild);
+    }
+}
+
+/* ================================
+      EMOTES DA TWITCH AUTOMÁTICOS
+================================= */
+
+function convertEmotes(message) {
+    return message
+        .split(" ")
+        .map(word => {
+            // lista pequena de emotes básicos
+            const emotes = {
+                "Kappa": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0",
+                "PogChamp": "https://static-cdn.jtvnw.net/emoticons/v2/88/default/dark/1.0",
+                "LUL": "https://static-cdn.jtvnw.net/emoticons/v2/425618/default/dark/1.0",
+                "BibleThump": "https://static-cdn.jtvnw.net/emoticons/v2/86/default/dark/1.0"
+            };
+
+            return emotes[word]
+                ? `<img class="emote" src="${emotes[word]}">`
+                : word;
+        })
+        .join(" ");
+}
+
+</script>
+</body>
+</html>

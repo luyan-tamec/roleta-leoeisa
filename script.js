@@ -9,6 +9,10 @@ const overlay = document.getElementById('resultadoOverlay');
 const lista = document.getElementById('listaNomes');
 const csv = document.getElementById('inputCSV');
 
+const imagemCentro = new Image();
+imagemCentro.src = 'centro.png'; // PNG ou WEBP com fundo transparente
+
+
 const paletaNeutra = ["#fafafa", "#f5f5f5", "#f0f0f0", "#ebebeb", "#e0e0e0", "#d7d7d7", "#cfcfcf", "#c7c7c7", "#bdbdbd", "#b3b3b3", "#a9a9a9", "#9e9e9e", "#8f8f8f", "#858585", "#7d7d7d", "#757575", "#6e6e6e", "#666666", "#5e5e5e", "#faf8f5", "#f2eee8", "#e9e4da", "#ded7cc", "#d2cbbe", "#c7c0b4", "#bcb5a9", "#b0a99f", "#a59e95", "#9a938a", "#8f887f", "#847d75", "#7a6f6a", "#6f645e", "#645952", "#5a4f48", "#f2f4f7", "#eceff2", "#e6e9ed", "#dfe3e8", "#d9dde2", "#d1d6dc", "#ccd1d6", "#c5cbd2", "#c0c5cb", "#b8bfc7", "#b3b9c0", "#adb3ba", "#a7adb4", "#a1a7ae", "#9aa1a9", "#949aa3", "#8e959d", "#878e96", "#828992", "#7b828b", "#767d86", "#707780", "#6a717a", "#646b74", "#fbfaf8", "#f8f6f3", "#f3f1ed", "#eeeae6", "#e9e5df", "#e3ded8", "#ddd8d2", "#d7d2cc", "#cfc7c0", "#e2ae81ff", "#bdb5ae", "#5b68a7ff", "#aba39c", "#a29a93", "#84481bff", "#908781"];
 
 let nomes = [];
@@ -59,7 +63,7 @@ function playTick() {
 
     o.start();
     o.stop(audioCtx.currentTime + 0.08);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 const sliderTick = document.getElementById('volTick');
@@ -377,6 +381,26 @@ function remover(i) {
   atualizar();
 }
 
+const centro = document.querySelector('.centro');
+
+function atualizarCentro() {
+  if (!centro) return;
+
+  const total = nomes.length;
+
+  const min = 10;   // tamanho mínimo (px)
+  const max = 160;  // tamanho máximo (px)
+
+  // crescimento suave
+  let tamanho = min + total * 0.6;
+
+  // limites
+  tamanho = Math.max(min, Math.min(max, tamanho));
+
+  centro.style.width = tamanho + 'px';
+  centro.style.height = tamanho + 'px';
+}
+
 function adicionar() {
   const n = nome.value.trim();
   let q = parseInt(qtd.value) || 1;
@@ -399,8 +423,13 @@ function adicionar() {
   gerarBuffer();
   desenhar();
   embaralhar();
+  atualizarCentro();
   atualizar();
 }
+setInterval(() => {
+  atualizarCentro();
+}, 200);
+
 
 function embaralhar() {
   for (let i = nomes.length - 1; i > 0; i--) {
