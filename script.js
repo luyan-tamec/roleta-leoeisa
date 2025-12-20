@@ -307,7 +307,7 @@ function parar() {
 function suave() {
   if (vel <= 0) vel = 0.001;
   function step() {
-    vel *= 0.978;
+    vel *= 0.980;
     if (vel < 0.0005) vel = 0;
     angulo += vel;
     tick();
@@ -594,5 +594,6 @@ window.addEventListener('resize', ajustarCanvas);
 
 ajustarCanvas();
 carregar();
+
 
 
