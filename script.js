@@ -1,3 +1,4 @@
+
 const PREFIX = "r1_";
 
 const canvas = document.getElementById('roleta');
@@ -307,7 +308,7 @@ function parar() {
 function suave() {
   if (vel <= 0) vel = 0.001;
   function step() {
-    vel *= 0.984;
+    vel *= 0.988;
     if (vel < 0.0005) vel = 0;
     angulo += vel;
     tick();
@@ -594,6 +595,7 @@ window.addEventListener('resize', ajustarCanvas);
 
 ajustarCanvas();
 carregar();
+
 
 
 
