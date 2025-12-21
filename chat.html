@@ -5,7 +5,7 @@
 <title>Capturador de Chat Twitch</title>
 
 <style>
-    /* ======= RESET ======= */
+    
     * {
         margin: 0;
         padding: 0;
@@ -14,11 +14,11 @@
     }
 
     body {
-        background: rgba(0,0,0,0); /* fundo transparente para OBS */
+        background: rgba(0,0,0,0); 
         overflow: hidden;
     }
 
-    /* ======= CONTAINER ======= */
+   
     #chat-box {
         margin-top: 10px;
         width: 100%;
@@ -30,7 +30,7 @@
         overflow: hidden;
     }
 
-    /* ======= MENSAGEM ======= */
+    
     .msg {
         display: flex;
         align-items: center;
@@ -44,26 +44,26 @@
         animation: fadeIn 0.4s forwards;
     }
 
-    /* NOME */
+    
     .username {
         color: #d326b6;
         font-weight: bold;
         font-size: 12px;
     }
 
-    /* TEXTO */
+    
     .text {
         color: #ffffff;
         font-size: 12px;
     }
 
-    /* ======= EMOTES ======= */
+    
     img.emote {
         height: 28px;
         margin-bottom: -6px;
     }
 
-    /* ======= ANIMAÇÃO ======= */
+    
     @keyframes fadeIn {
         from { transform: translateY(20px); opacity: 0; }
         to   { transform: translateY(0); opacity: 1; }
@@ -77,14 +77,10 @@
 
 <script src="tmi.min.js"></script>
 <script>
-/* ================================
-       CONFIGURAÇÃO DA TWITCH
-================================= */
-const canal = "isaroza_";  // <<< coloque seu canal aqui
 
-/* ================================
-       CONEXÃO COM O TMI.JS
-================================= */
+const canal = "isaroza_";  
+
+
 const client = new tmi.Client({
     connection: { reconnect: true, secure: true },
     channels: [ canal ]
@@ -92,17 +88,13 @@ const client = new tmi.Client({
 
 client.connect();
 
-/* ================================
-          RECEBER MENSAGEM
-================================= */
+
 
 client.on("message", (channel, tags, message, self) => {
     addMessage(tags["display-name"], message);
 });
 
-/* ================================
-          ADICIONAR MENSAGEM
-================================= */
+
 
 function addMessage(username, message) {
     const chatBox = document.getElementById("chat-box");
@@ -117,21 +109,19 @@ function addMessage(username, message) {
 
     chatBox.prepend(msgDiv);
 
-    // remover mensagens antigas
+    
     if (chatBox.children.length > 25) {
         chatBox.removeChild(chatBox.lastChild);
     }
 }
 
-/* ================================
-      EMOTES DA TWITCH AUTOMÁTICOS
-================================= */
+
 
 function convertEmotes(message) {
     return message
         .split(" ")
         .map(word => {
-            // lista pequena de emotes básicos
+           
             const emotes = {
                 "Kappa": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0",
                 "PogChamp": "https://static-cdn.jtvnw.net/emoticons/v2/88/default/dark/1.0",
@@ -149,5 +139,6 @@ function convertEmotes(message) {
 </script>
 </body>
 </html>
+
 
 
