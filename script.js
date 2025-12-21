@@ -161,8 +161,25 @@ if (btnTema) {
     aplicarTema();
     if (titulo.textContent === "Roleta Rindo e Apoiando!!") {
       titulo.textContent = "Quem sao eles?";
+      const roleta = document.getElementById('roleta');
+      const painel = document.getElementById('painel');
+    
+      intervaloId = setInterval(() => {
+        const cor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`;
+      roleta.style.borderColor = cor;
+
+      roleta.style.boxShadow = `0 0 40px ${cor}`;
+      painel.style.boxShadow = `0 0 40px ${cor}`;
+      }, 400);
+
     } else {
       titulo.textContent = "Roleta Rindo e Apoiando!!";
+      clearInterval(intervaloId);
+      intervaloId = null;
+      roleta.style.borderColor = '#f6f0f3ff';
+      roleta.style.boxShadow = `0 0 0px #ffffffff`;
+      roleta.style.backgroundColor = 'transparent';
+      painel.style.boxShadow = `0 0 0px #ffffffff`;
     }
   });
 }
@@ -216,13 +233,14 @@ function gerarBuffer() {
     let nm = nomes[i] || '';
 
 
-    bufferCtx.font = `bold ${nomes.length > 20 ? 10 : 16}px Arial`;
+    bufferCtx.font = `bold ${nomes.length > 48 ? 11 : 15}px Arial`;
+    bufferCtx.globalAlpha = nomes.length > 240 ? 0.3 : 1;
 
 
     if (nm.length > 24) nm = nm.slice(0, 21) + '...';
 
 
-    bufferCtx.fillText(nm, r * 0.50, 0);
+    bufferCtx.fillText(nm, r * 0.58, 0);
 
     bufferCtx.restore();
 
@@ -275,6 +293,40 @@ function tick() {
     ultimo = s;
   }
 }
+
+let mouseDown = false;
+let iniciouArraste = false;
+let startX = 0;
+let startY = 0;
+const LIMIAR = 130; // pixels mínimos de movimento
+
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return; // somente botão esquerdo
+  mouseDown = true;
+  iniciouArraste = false;
+  startX = e.clientX;
+  startY = e.clientY;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!mouseDown || girando) return;
+
+  const dx = Math.abs(e.clientX - startX);
+  const dy = Math.abs(e.clientY - startY);
+
+  if (dx > LIMIAR || dy > LIMIAR) {
+    iniciouArraste = true;
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (mouseDown && iniciouArraste && !girando) {
+    girar();
+  }
+
+  mouseDown = false;
+  iniciouArraste = false;
+});
 
 function girar() {
   if (nomes.length < 1) {

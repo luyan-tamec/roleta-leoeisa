@@ -125,8 +125,6 @@ button:hover { transform: scale(1.1); }
   align-items: center;
 }
 #container:hover  {
-  transform: scale(1.010);
-  transition: transform 0.5s ease;
   cursor: pointer;
 
 }
