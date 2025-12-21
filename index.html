@@ -108,7 +108,7 @@
   </style>
 </head>
 
-<body>
+<body id="fundo">
   <!--<div class="botoesmenu">
     <a id="btnLeft" href="index2.html">Roleta com captura de chat</a>
     <a id="btnLeft2" href="SorteadorTwitch.html">sorteador com captura de chat</a>
@@ -194,7 +194,7 @@
     const toggleBtn = document.getElementById('toggleChat');
     const chatBox = document.getElementById('chatBox');
 
-    // Estado inicial explícito
+
     let chatVisivel = false;
 
     toggleBtn.addEventListener('click', () => {
@@ -203,19 +203,13 @@
       if (chatVisivel) {
         chatBox.style.display = 'block';
         toggleBtn.textContent = 'Esconder Chat';
-        document.getElementById('titulo').textContent = 'Carregando chat';
-
-
-        setInterval(() => {
-          document.getElementById('titulo').textContent = 'Roleta Rindo e Apoiando!!';
-        }, 2000);
 
       } else {
         chatBox.style.display = 'none';
         toggleBtn.textContent = 'Mostrar Chat';
       }
     });
-    
+
 
   </script>
 

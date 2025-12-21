@@ -160,9 +160,12 @@ if (btnTema) {
     localStorage.setItem(PREFIX + "tema", tema);
     aplicarTema();
     if (titulo.textContent === "Roleta Rindo e Apoiando!!") {
-      titulo.textContent = "Quem sao eles?";
+      titulo.textContent = "Roleta Rindo e Apoiando!!!";
       const roleta = document.getElementById('roleta');
       const painel = document.getElementById('painel');
+      const fundo = document.getElementById('fundo');
+      const resultadoOverlay = document.getElementById('resultadoOverlay');
+      
     
       intervaloId = setInterval(() => {
         const cor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`;
@@ -170,6 +173,9 @@ if (btnTema) {
 
       roleta.style.boxShadow = `0 0 40px ${cor}`;
       painel.style.boxShadow = `0 0 40px ${cor}`;
+      fundo.style.background = cor;
+      resultadoOverlay.style.textShadow = `0 0 40px ${cor}, 0 0 40px ${cor}`;
+      
       }, 400);
 
     } else {
@@ -180,6 +186,7 @@ if (btnTema) {
       roleta.style.boxShadow = `0 0 0px #ffffffff`;
       roleta.style.backgroundColor = 'transparent';
       painel.style.boxShadow = `0 0 0px #ffffffff`;
+      fundo.style.background = '#000000b8';
     }
   });
 }
