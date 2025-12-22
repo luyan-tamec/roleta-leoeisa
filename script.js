@@ -164,7 +164,7 @@ if (btnTema) {
       const roleta = document.getElementById('roleta');
       const painel = document.getElementById('painel');
       const fundo = document.getElementById('fundo');
-      const resultadoOverlay = document.getElementById('resultadoOverlay');
+      
       
     
       intervaloId = setInterval(() => {
@@ -174,7 +174,7 @@ if (btnTema) {
       roleta.style.boxShadow = `0 0 40px ${cor}`;
       painel.style.boxShadow = `0 0 40px ${cor}`;
       fundo.style.background = cor;
-      resultadoOverlay.style.textShadow = `0 0 40px ${cor}, 0 0 40px ${cor}`;
+      
       
       }, 400);
 
@@ -668,6 +668,7 @@ window.addEventListener('resize', ajustarCanvas);
 
 ajustarCanvas();
 carregar();
+
 
 
 
