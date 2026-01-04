@@ -116,7 +116,7 @@ document.getElementById('btnMusica').onclick = () => {
       document.getElementById('btnMusica').textContent = '⏸️ Parar Música';
     }).catch(() => { });
   } else {
-    musica.pause();
+    musica.pause()
     tocandoMusica = false;
     document.getElementById('btnMusica').textContent = '🎵 Tocar Música';
   }
@@ -161,32 +161,11 @@ if (btnTema) {
     aplicarTema();
     if (titulo.textContent === "Roleta Rindo e Apoiando!!") {
       titulo.textContent = "Roleta Rindo e Apoiando!!!";
-      const roleta = document.getElementById('roleta');
-      const painel = document.getElementById('painel');
-      const fundo = document.getElementById('fundo');
-      
-      
-    
-      intervaloId = setInterval(() => {
-        const cor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`;
-      roleta.style.borderColor = cor;
-
-      roleta.style.boxShadow = `0 0 40px ${cor}`;
-      painel.style.boxShadow = `0 0 40px ${cor}`;
-      fundo.style.background = cor;
-      
-      
-      }, 400);
 
     } else {
       titulo.textContent = "Roleta Rindo e Apoiando!!";
       clearInterval(intervaloId);
       intervaloId = null;
-      roleta.style.borderColor = '#f6f0f3ff';
-      roleta.style.boxShadow = `0 0 0px #ffffffff`;
-      roleta.style.backgroundColor = 'transparent';
-      painel.style.boxShadow = `0 0 0px #ffffffff`;
-      fundo.style.background = '#000000b8';
     }
   });
 }
@@ -305,10 +284,10 @@ let mouseDown = false;
 let iniciouArraste = false;
 let startX = 0;
 let startY = 0;
-const LIMIAR = 130; // pixels mínimos de movimento
+const LIMIAR = 130; 
 
 canvas.addEventListener('mousedown', (e) => {
-  if (e.button !== 0) return; // somente botão esquerdo
+  if (e.button !== 0) return; 
   mouseDown = true;
   iniciouArraste = false;
   startX = e.clientX;
@@ -368,6 +347,7 @@ function girar() {
     giroFrameId = requestAnimationFrame(loop);
   }
   giroFrameId = requestAnimationFrame(loop);
+  
 }
 
 function parar() {
@@ -407,6 +387,20 @@ function suave() {
         tocandoMusica = false;
         document.getElementById('btnMusica').textContent = '🎵 Tocar Música';
       }, 3000);
+      setTimeout(() => {
+        document.body.classList.remove('painel-oculto');
+        btnMostrar.style.display = 'none';
+
+
+      clearInterval(intervaloId);
+      intervaloId = null;
+      roleta.style.borderColor = '#f6f0f3ff';
+      roleta.style.boxShadow = `0 0 0px #ffffffff`;
+      roleta.style.backgroundColor = 'transparent';
+      painel.style.boxShadow = `0 0 0px #ffffffff`;
+      fundo.style.background = '#000000b8';
+    
+      }, 2000);
       destacar(i);
       mostrarVencedor(v);
     }
@@ -462,8 +456,8 @@ function atualizarCentro() {
 
   const total = nomes.length;
 
-  const min = 10;   // tamanho mínimo (px)
-  const max = 160;  // tamanho máximo (px)
+  const min = 10;   
+  const max = 160;  
 
   // crescimento suave
   let tamanho = min + total * 0.6;
