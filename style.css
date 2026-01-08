@@ -299,6 +299,16 @@ body.painel-oculto #container {
   
 }
 
+#listaNomes {
+  background-image: url('will.png');
+  background-size: contain;        /* ou contain */
+  background-repeat: no-repeat;
+  background-position: top;
+
+  /* importante para a imagem aparecer */
+  min-height: 200px;
+}
+
 
 
 
