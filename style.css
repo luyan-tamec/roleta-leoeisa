@@ -301,10 +301,10 @@ body.painel-oculto #container {
 
 #listaNomes {
   background-image: url('will.png');
-  background-size: contain;        
-  background-repeat: no-repeat;
+  background-size: contain;
   background-position: top;
-
+  background-repeat: no-repeat;
+  border-radius: 20px;
   min-height: 200px;
 }
 
