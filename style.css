@@ -1,22 +1,23 @@
-:root { --accent: #61dafb; }
+:root {
+  --accent: #61dafb;
+}
 
 body {
   margin: 0;
   min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
   color: #fff;
-  background:#111;
+  background: #111;
   overflow-x: hidden;
   position: relative;
-  
+
 }
 
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: url('leoeisa.png')
-    center/cover no-repeat;
+  background: url('leoeisa.png') center/cover no-repeat;
   filter: blur(2px) brightness(0.6);
   z-index: -2;
   transition: all 0.7s;
@@ -26,7 +27,7 @@ body::after {
   content: "";
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   z-index: -1;
 }
 
@@ -37,7 +38,7 @@ body::after {
   align-items: flex-start;
   gap: 40px;
   padding: 40px 20px;
-  
+
 }
 
 .painel {
@@ -88,24 +89,51 @@ button {
   background: var(--accent);
   color: #000;
   font-weight: 700;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   transition: transform .12s ease;
   border-radius: 15px;
 }
 
-button:hover { transform: scale(1.1); }
+button:hover {
+  transform: scale(1.1);
+}
 
 #listaNomes {
   display: flex;
+  position: relative;
   flex-wrap: wrap;
   gap: 6px;
   justify-content: center;
   margin: 10px 0 20px;
+  min-height: 200px;
+  border-radius: 20px;
+  overflow: hidden;
+  z-index: 200;
+}
+
+#listaNomes::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("will.png");
+  background-size: contain;
+  background-position: top;
+  background-repeat: no-repeat;
+  opacity: 0.5;
+  z-index: -2;
+}
+
+
+#listaNomes::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
 }
 
 .tagNome {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   padding: 6px 10px;
   display: flex;
@@ -132,7 +160,8 @@ button:hover { transform: scale(1.1); }
   justify-content: center;
   align-items: center;
 }
-#container:hover  {
+
+#container:hover {
   cursor: pointer;
 
 }
@@ -154,8 +183,9 @@ canvas {
   width: min(90vw, 500px);
   aspect-ratio: 1 / 1;
   background: rgba(0, 0, 0, 0.031);
-  box-shadow: 0 0 18px rgba(0,0,0,0.4);
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.4);
 }
+
 canvas:hover {
   border-color: #e012d6;
   box-shadow: 0 0 60px #f0e7ef;
@@ -167,14 +197,14 @@ canvas:hover {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%,-50%) scale(0.8);
-  background: rgba(0,0,0,0.90);
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(0, 0, 0, 0.90);
   padding: 16px 28px;
   border-radius: 18px;
   font-size: 2rem;
   font-weight: 800;
   color: #fff;
-  text-shadow: 0 3px 8px rgba(0,0,0,0.9);
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.9);
   opacity: 0;
   transition: opacity .45s ease, transform .45s ease;
   z-index: 30;
@@ -183,24 +213,33 @@ canvas:hover {
 
 #resultadoOverlay.mostrar {
   opacity: 1;
-  transform: translate(-50%,-50%) scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 
-@media (max-width: 900px){
-  .layout { flex-direction: column; align-items: center; }
-  #resultadoOverlay { font-size: 1.4rem; padding: 10px 16px; }
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #resultadoOverlay {
+    font-size: 1.4rem;
+    padding: 10px 16px;
+  }
 }
 
-.musica { background-color: orange; }
+.musica {
+  background-color: orange;
+}
 
 #ultimosVencedores {
   margin-top: 20px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   padding: 10px 15px;
   border-radius: 10px;
   max-width: 400px;
   text-align: center;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 #listaVencedores {
@@ -212,7 +251,7 @@ canvas:hover {
 }
 
 .vencedorTag {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   padding: 5px 10px;
   font-weight: 600;
@@ -222,8 +261,8 @@ canvas:hover {
 body.tema-claro {
   background: #FF4DA6;
   color: #FF4DA6;
-  
-     
+
+
 }
 
 body.tema-claro .tagNome {
@@ -244,7 +283,7 @@ body.tema-claro canvas {
 }
 
 body.tema-claro #resultadoOverlay {
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   color: #000;
 }
 
@@ -270,7 +309,7 @@ body.tema-claro #resultadoOverlay {
 body.painel-oculto .painel {
   transition: all 0.5s ease-in-out;
   display: none;
-  
+
 }
 
 body.painel-oculto .layout {
@@ -280,9 +319,10 @@ body.painel-oculto .layout {
   align-items: center;
   justify-content: center;
   margin-top: 30px;
-  
+
 
 }
+
 body.painel-oculto::before {
   background-image: url("centro.png");
   background-size: contain;
@@ -293,21 +333,9 @@ body.painel-oculto::before {
 
 
 body.painel-oculto #container {
-  margin: 0;   
+  margin: 0;
   z-index: 2;
- 
-  
+
+
 }
-
-#listaNomes {
-  background-image: url('will.png');
-  background-size: contain;
-  background-position: top;
-  background-repeat: no-repeat;
-  border-radius: 20px;
-  min-height: 200px;
-}
-
-
-
 
