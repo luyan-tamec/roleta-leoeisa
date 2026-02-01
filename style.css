@@ -321,14 +321,17 @@ body.painel-oculto .layout {
   margin-top: 30px;
 
 
+
 }
 
 body.painel-oculto::before {
-  background-image: url("centro.png");
-  background-size: contain;
-  background-repeat: repeat;
-  filter: blur(6px);
-  transition: all 0.7s;
+  background-image: url("back.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(1px);
+  transition: all 0.5s;
+
 }
 
 
@@ -336,6 +339,17 @@ body.painel-oculto #container {
   margin: 0;
   z-index: 2;
 
-
 }
 
+.resultover {
+  display: inline-block;
+  flex-direction: column;
+}
+
+#resultadoOverlay {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+
+
+}
