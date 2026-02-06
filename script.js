@@ -550,7 +550,7 @@ function mostrarVencedor(nm) {
   overlay._timeoutId = setTimeout(() => {
     overlay.classList.remove('mostrar');
     overlay.textContent = '';
-  }, 400000);
+  }, 4000);
   vencedores.push(nm);
   salvarVencedores();
 }
