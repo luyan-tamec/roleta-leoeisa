@@ -361,7 +361,7 @@ function parar() {
 function suave() {
   if (vel <= 0) vel = 0.001;
   function step() {
-    vel *= 0.988;
+    vel *= 0.990;
     if (vel < 0.0005) vel = 0;
     angulo += vel;
     tick();
