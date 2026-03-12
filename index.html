@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Roleta Rindo e Apoiando!</title>
+  <link rel="stylesheet" href="styles/style.css">
+  <link rel="stylesheet" href="styles/stylearena.css">
+  <link rel="shortcut icon" href="img/will.png" type="image/x-icon">
+
+</head>
+
+<body id="fundo">
+
+  <div class="layout">
+    <div id="arena"></div>
+
+    <div class="painel">
+
+      <div class="cartao" id="painel">
+        <h1 id="titulo" class="titulo" style="margin:20px; font-size:14px;">roulette laughing and supporting!!</h1>
+
+        <div class="controls">
+          <button id="esconder-btn-top" class="esconder-btn">mais opçoes🔽</button>
+          <div id="bloco-top" class="bloco-top">
+            <button id="btnOcultarPainel" style="height: 38px;">🙈 Ocultar Painel</button>
+            <input class="caixacheck" type="checkbox" id="meucheck" checked>
+            <label for="meucheck">ocultar <br> painel <br>automaticamente</label>
+            <button id="btnTema">Tema</button>
+            <select id="modoCor">
+              <option value="colorido" selected>🏳‍🌈 cores do vale</option>
+              <option value="neutro">⚪ cores Neutras</option>
+            </select>
+            <button id="toggleChat">Mostrar Chat</button>
+            <select id="indexboneco">
+              <option value="z-index:-3;">Desativar</option>
+              <option value="z-index:-2;" selected>Boneco Atras da roleta</option>
+              <option value="z-index: 999;">Boneco A frente da roleta</option>
+            </select>
+
+          </div>
+
+          <div class="blocoessencial">
+
+            <input id="nome" type="text" placeholder="Digite um nome">
+            <input id="quantidade" type="number" min="1" value="" placeholder="quantidade" style="width:80px;">
+            <button id="btnAdicionar">Adicionar</button>
+            <input id="tempo" type="number" min="1" placeholder="Tempo (seg)" style="width:110px;">
+
+            <button class="btnembaralhar" id="btnEmbaralhar">🔀 Embaralhar</button>
+            <button id="btnIniciar" style="background-color:#43a047;color:#fff;" onclick="iniciar()">Iniciar</button>
+            <button id="btnParar" style="background-color:#e53935;color:#fff;">Parar</button><br>
+            <div class="div-check-music" alt="TOCAR MUSICA AO GIRAR" title="">
+              <input class="caixacheckmusic" type="checkbox" id="meucheckmusic" checked>
+              <label for="meucheckmusic"></label>
+              <span class="tooltip-text">Tocar musica ao girar</span>
+            </div>
+
+            <button class="musica" id="btnMusica">🎵 Tocar Música</button>
+            <button id="btnFullscreen">🖥️ Tela Cheia</button>
+
+            <button id="btnLimpar">🧹 Limpar Tudo</button>
+            <label style="display:flex;align-items:center;gap:6px;color:#ccc;">
+              🔊vol.musica
+              <input type="range" id="volumeMusica" min="0" max="10" value="1" style="width:120px;">
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;color:#ccc; letter-spacing: 3px;">
+              🔔vol.seta
+              <input type="range" id="volTick" min="0" max="10" value="10" style="width:120px;">
+            </label>
+          </div>
+        </div>
+
+        <button id="esconder-btn" class="esconder-btn">mais opçoes🔽</button>
+        <div class="extras" id="extra">
+          <input type="file" id="inputCSV" accept=".csv" style="display:none;">
+          <button id="btnImportar">📥 Importar CSV</button>
+
+          <select id="colunaCSV">
+            <option value="0">Coluna 1</option>
+            <option value="1">Coluna 2</option>
+            <option value="2">Coluna 3</option>
+            <option value="3">Coluna 4</option>
+          </select>
+
+          <button id="btnExportar">📤 Exportar CSV</button>
+
+        </div>
+      </div>
+      <div id="ultimosVencedores">
+        <strong>🏆 Últimos Vencedores</strong>
+        <div id="listaVencedores"></div>
+        <button id="btnLimparVencedores" style="margin-top:8px;background:#e53935;color:#fff;height:35px;">🗑️ Limpar
+          Vencedores</button>
+      </div>
+      <div class="cartaonomes" id="cartaonames">
+        <div id="listaNomes"></div>
+      </div>
+    </div>
+
+    <div id="container">
+      <div class="seta"></div>
+      <canvas id="roleta"></canvas>
+      <img src="img/centro.png" class="centro">
+      <div id="chatBox">
+        <iframe class="centrochat" src="static/chat.html" frameborder="0"></iframe>
+      </div>
+      <div class="resultover"></div>
+      <div id="resultadoOverlay"></div>
+    </div>
+  </div>
+
+  <button id="btnMostrarPainel" style="display:none;">
+    📋 Mostrar Painel
+  </button>
+  <footer>
+    @Todos os direitos reservados a empresa Rindo & Apoiando 2026
+  </footer>
+  <script src="tmi.min.js" defer></script>
+  <script src="script.js" defer></script>
+  <script src="script2.js" defer></script>
+  <script src="script3.js" defer></script>
+  <script src="script4.js" defer></script>
+  <script src="scrparena.js" defer></script>
+
+
+</body>
+
+</html>
