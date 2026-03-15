@@ -37,7 +37,7 @@ const BONECOS_LIST = [
 ];
 /* ================= CONFIG ================= */
 
-const channelName = "luyan_tamec";
+const channelName = "isaroza_";
 
 const USER_COOLDOWN = 15; // 15s por usuário
 const GLOBAL_COOLDOWN = 5000; // 5s entre spawns globais
@@ -58,7 +58,7 @@ pos_bonecos.addEventListener("change", () => {
     arena.style = `${pos_bonecos.value}`
 })
 
-/* ================= TMI ================= */
+/* ================= TMI da conexao ================= */
 
 const client = new tmi.Client({
     connection: { secure: true, reconnect: true },
@@ -100,7 +100,7 @@ function handleJoin(username) {
     lastGlobalSpawn = now;
 }
 
-/* ============== SPAWN ============== */
+/* ============== SPAWNAR ============== */
 
 function spawnBoneco(username) {
 
@@ -138,7 +138,7 @@ function spawnBoneco(username) {
     activeUsers.set(username, data);
 }
 
-/* ============== MOVIMENTO CONTÍNUO ============== */
+/* ============== MOVIMENTO VAI E VOLTA ============== */
 
 function update() {
 
@@ -157,7 +157,7 @@ function update() {
             data.vy *= -1;
         }
 
-        //ALTERAÇÃO DE LADO AUTOMÁTICA
+        //ALTERAÇÃO DE LADO
         const img = data.element.querySelector("img");
 
         if (data.vx > 0) {
