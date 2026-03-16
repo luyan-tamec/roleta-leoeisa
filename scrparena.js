@@ -70,7 +70,7 @@ client.connect();
 client.on("message", (channel, tags, message, self) => {
     if (self) return;
 
-    if (message.trim().toLowerCase() === "!entrar") {
+    if (message.trim().toLowerCase() === "!entrar" || "!enter" || "!join") {
         handleJoin(tags["display-name"]);
     }
 });
