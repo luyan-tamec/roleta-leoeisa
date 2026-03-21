@@ -424,6 +424,8 @@ body.painel-oculto #container {
 .cartao {
   background-color: rgba(0, 0, 0, 0.526);
   border: solid 1px rgba(174, 159, 159, 0.795);
+  border-top: #d108ac 3px solid;
+  border-bottom: #eee9ed 4px solid;
   border-radius: 30px;
   margin: 20px;
 }
