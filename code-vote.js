@@ -89,17 +89,17 @@
         if (!match) return;
 
         const username = match[1];
-        const message = match[2].toLowerCase().trim();
+        const text = match[2].toLowerCase().trim();
 
         if (voters.has(username)) return;
 
 
-        if (message === "sim") {
+        if (text === "sim" || text === "SIM" || text === "s" || text === "ss" || text === "S" || text === "SS" || text === "Ss") {
             votes.sim++;
             voters.add(username);
         }
 
-        if (message === "nao") {
+        if (text === "nao" || text === "não" || text === "NAO" || text === "n" || text === "nn" || text === "N" || text === "Nn" || text === "NN") {
             votes.nao++;
             voters.add(username);
         }
