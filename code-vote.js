@@ -1,6 +1,6 @@
 (function () {
 
-    const CHANNEL = "luyan_tamec";
+    const CHANNEL = "isaroza_";
 
     const div = document.getElementById('vote-widget');
 

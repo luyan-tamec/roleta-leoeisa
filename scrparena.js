@@ -37,7 +37,7 @@ const BONECOS_LIST = [
 ];
 
 
-const channelName = "luyan_tamec";
+const channelName = "isaroza_";
 
 const USER_COOLDOWN = 15000; // 15s por usuário
 const GLOBAL_COOLDOWN = 5000; // 5s entre spawns globais
