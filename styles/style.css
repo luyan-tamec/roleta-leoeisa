@@ -473,12 +473,15 @@ body.painel-oculto #container {
 
 #chatBox {
   display: none;
+  
+
 
 }
 
 iframe {
 
   width: 100%;
+  
 }
 
 .blocoessencial {

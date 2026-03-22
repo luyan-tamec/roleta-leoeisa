@@ -1,0 +1,57 @@
+ .votos-widget {
+    display: hidden;
+        font-family: Arial;
+        width: 280px;
+        background: #0e0e1000;
+        padding: 15px;
+        border-radius: 12px;
+        color: #fff;
+        
+      }
+
+      .start {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .start { background: #00ff88; }
+      .stop { background: #ff3b3b;
+    width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold; }
+
+      .bar {
+        height: 22px;
+        border-radius: 6px;
+        margin-top: 5px;
+        transition: 0.3s;
+      }
+
+      .sim { background: #00ff88; }
+      .nao { background: #ff3b3b; }
+
+      .label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+      }
+
+      .status {
+        text-align: center;
+        font-size: 12px;
+        opacity: 0.7;
+        margin-bottom: 5px;
+      }
+
+      .sumir{
+        display: none;
+      }
