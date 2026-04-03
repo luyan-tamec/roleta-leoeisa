@@ -42,6 +42,7 @@ btnMostrar.addEventListener('click', () => {
 
 });
 
+
 btninicio = document.getElementById('btnIniciar');
 btnparar = document.getElementById('btnParar');
 
@@ -50,12 +51,13 @@ btninicio.addEventListener('click', () => {
   const checkOcultar = document.getElementById('meucheck');
   const nomes = JSON.parse(localStorage.getItem(PREFIX + 'nomes'));
 
-  if (checkOcultar.checked) {
+  
     if (nomes) {
       setTimeout(() => {
+      if (checkOcultar.checked) {  
         document.body.classList.add('painel-oculto');
         btnMostrar.style.display = 'block';
-
+      }
         const roleta = document.getElementById('roleta');
         const painel = document.getElementById('painel');
         const fundo = document.getElementById('fundo');
@@ -69,7 +71,7 @@ btninicio.addEventListener('click', () => {
 
         }, 500);
       }, 1200);
-    }
+    
 
   }
 });
@@ -100,3 +102,14 @@ esconder_btn_top.addEventListener("click", () => {
     bloco_top.className = "esconder"
   }
 })
+
+const span =document.getElementById("tempo-msc");
+const barraTempo= document.getElementById("span-tempo");
+span.addEventListener("mouseenter",()=>{
+    barraTempo.style.visibility="visible"
+})
+span.addEventListener("mouseleave",()=>{
+    barraTempo.style.visibility="hidden"
+})
+
+  

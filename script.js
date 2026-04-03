@@ -99,8 +99,85 @@ function playStopSound() {
   } catch (e) { }
 }
 
-const musica = new Audio('musica.mp3');
-musica.loop = true;
+const select = document.getElementById("sons");
+const inputVol = document.getElementById("input-vol");
+const inputTempo = document.getElementById("tempo-msc");
+const botao = document.getElementById("btn");
+
+
+let musicas = [
+  "musicas/musica0.mp3",
+  "musicas/musica1.mp3",
+  "musicas/musica2.mp3",
+  "musicas/musica3.mp3",
+  "musicas/musica4.mp3",
+  "musicas/musica5.mp3",
+  "musicas/musica6.mp3",
+  "musicas/musica7.mp3",
+  "musicas/musica8.mp3",
+  "musicas/musica9.mp3",
+  "musicas/musica10.mp3",
+  "musicas/musica11.mp3",
+  "musicas/musica12.mp3",
+  "musicas/musica13.mp3",
+  "musicas/musica14.mp3",
+  "musicas/musica15.mp3",
+  "musicas/musica16.mp3",
+  "musicas/musica17.mp3"
+
+]
+//----------------------------------------------------------------------//
+const musica = new Audio();
+let musicaAtual = "";
+
+select.addEventListener("change", function () {
+  musica.src = musicas[select.value];
+  musicaAtual = musica.src;
+  musica.pause();
+  musica.currentTime = 0;
+  botao.textContent = "Play";
+  musica.loop = true
+  if (document.getElementById('btnMusica').textContent === '🎵 Tocar Música' ) {
+    return
+  } else {
+    document.getElementById('btnMusica').onclick() 
+  }
+  
+
+});
+inputVol.addEventListener("input", function () {
+  let vol = inputVol.value / 100
+  musica.volume = vol
+});
+inputTempo.addEventListener("input", function () {
+  let tempo = inputTempo.value
+  musica.currentTime = tempo
+});
+let intervaloId = setInterval(() => {
+  inputTempo.value = musica.currentTime
+  inputTempo.max = musica.duration
+}, 1000); 
+
+botao.addEventListener("click", function () {
+  const musicaSelecionada = musicas[select.value];
+
+  if (musicaAtual !== musicaSelecionada) {
+    musica.src = musicaSelecionada;
+    musicaAtual = musicaSelecionada;
+   
+  }
+
+  if (musica.paused) {
+    musica.play();
+    botao.textContent = "Pause";
+  } else {
+    musica.pause();
+    botao.textContent = "Play";
+    musica.currentTime=0
+    
+  }
+});
+
 const volSalvo = localStorage.getItem(PREFIX + 'volumeMusica');
 if (volSalvo) musica.volume = parseFloat(volSalvo);
 document.getElementById('volumeMusica').value = Math.round(musica.volume * 100);
@@ -108,16 +185,24 @@ document.getElementById('volumeMusica').value = Math.round(musica.volume * 100);
 let tocandoMusica = false;
 
 document.getElementById('btnMusica').onclick = () => {
-  if (!tocandoMusica) {
-    musica.currentTime = 0;
-    musica.play().then(() => {
-      tocandoMusica = true;
-      document.getElementById('btnMusica').textContent = '⏸️ Parar Música';
-    }).catch(() => { });
+  const musicaSelecionada = musicas[select.value];
+
+  if (musicaAtual !== musicaSelecionada) {
+    musica.src = musicaSelecionada;
+    musicaAtual = musicaSelecionada;
+
+  }
+
+  if (musica.paused) {
+    musica.play();
+    botao.textContent = "Pause";
+    document.getElementById('btnMusica').textContent = '⏸️ Parar Música';
+
   } else {
-    musica.pause()
-    tocandoMusica = false;
+    musica.pause();
+    botao.textContent = "Play";
     document.getElementById('btnMusica').textContent = '🎵 Tocar Música';
+    musica.currentTime= 0
   }
 };
 
@@ -140,10 +225,10 @@ document.getElementById("modoCor").addEventListener("change", () => {
 });
 
 let tema = localStorage.getItem(PREFIX + "tema") || "escuro";
-const btnTema = document.getElementById("btnTema");
+//const btnTema = document.getElementById("btnTema");
 const titulo = document.getElementById("titulo");
 
-function aplicarTema() {
+/*function aplicarTema() {
   if (tema === "claro") {
     document.body.classList.add("tema-claro");
     btnTema.textContent = "Tema";
@@ -169,7 +254,7 @@ if (btnTema) {
   });
 }
 
-aplicarTema();
+aplicarTema();*/
 
 const bufferCanvas = document.createElement('canvas');
 const bufferCtx = bufferCanvas.getContext('2d');
