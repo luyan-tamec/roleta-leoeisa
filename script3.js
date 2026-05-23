@@ -374,7 +374,7 @@ async function abrirModalFilmes() {
 
     // Embaralha e pega a quantidade desejada (só se não tiver seleção manual)
     if (selecionados.size === 0) {
-      fonte = [...fonte].sort(() => Math.random() - 0.5).slice(0, qtd);
+      fonte = [...fonte].slice(0, qtd);
     }
 
     let adicionados = 0;
