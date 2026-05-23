@@ -222,3 +222,187 @@ window.addEventListener('resize', ajustarCanvas);
 
 ajustarCanvas();
 carregar();
+
+// ===== IMPORTAR FILMES DA API =====
+
+async function abrirModalFilmes() {
+  let filmes = [];
+
+  try {
+    const res = await fetch("https://leoeisa-cmgn.onrender.com/filmes");
+    filmes = await res.json();
+  } catch (e) {
+    alert("Erro ao buscar filmes. Verifique a conexão.");
+    return;
+  }
+
+  // Cria o modal
+  const overlay = document.createElement("div");
+  overlay.id = "modalFilmesOverlay";
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.85);
+    z-index:9999;display:flex;align-items:center;justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background:#1a1a1a;border:2px solid #d108ac;border-radius:20px;
+      padding:24px;width:min(95vw,480px);max-height:85vh;
+      display:flex;flex-direction:column;gap:12px;
+    ">
+      <h2 style="margin:0;color:#fff;text-align:center;font-size:1.1rem;">🎬 Importar Filmes para a Roleta</h2>
+
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="filmeSearch" type="text" placeholder="Pesquisar filme..." style="
+          flex:1;padding:8px 12px;border-radius:10px;border:none;
+          background:#333;color:#fff;font-size:13px;outline:none;
+        ">
+        <select id="filmeCategoria" style="
+          padding:8px;border-radius:10px;border:none;
+          background:#333;color:#fff;font-size:13px;
+        ">
+          <option value="">Todas categorias</option>
+          ${[...new Set(filmes.map(f => f.category))].sort()
+            .map(c => `<option value="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</option>`)
+            .join("")}
+        </select>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="color:#ccc;font-size:13px;">Quantidade:</label>
+        <input id="filmeQtd" type="number" min="1" max="${filmes.length}" value="5" style="
+          width:70px;padding:6px 10px;border-radius:10px;border:none;
+          background:#333;color:#fff;font-size:13px;text-align:center;
+        ">
+        <button id="btnSelecionarTodos" style="
+          padding:6px 12px;border-radius:10px;background:#555;
+          color:#fff;font-size:12px;border:none;cursor:pointer;
+        ">✅ Selecionar tudo</button>
+        <button id="btnDesmarcarTodos" style="
+          padding:6px 12px;border-radius:10px;background:#555;
+          color:#fff;font-size:12px;border:none;cursor:pointer;
+        ">❌ Desmarcar tudo</button>
+      </div>
+
+      <div id="filmeListaScroll" style="
+        overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;
+        max-height:340px;padding-right:4px;
+      "></div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="btnCancelarFilmes" style="
+          padding:10px 18px;border-radius:12px;background:#444;
+          color:#fff;border:none;cursor:pointer;font-weight:700;
+        ">Cancelar</button>
+        <button id="btnConfirmarFilmes" style="
+          padding:10px 18px;border-radius:12px;background:#d108ac;
+          color:#fff;border:none;cursor:pointer;font-weight:700;
+        ">🎬 Adicionar à Roleta</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const lista = document.getElementById("filmeListaScroll");
+  const searchInput = document.getElementById("filmeSearch");
+  const categoriaSelect = document.getElementById("filmeCategoria");
+  const qtdInput = document.getElementById("filmeQtd");
+
+  let selecionados = new Set();
+
+  function renderLista() {
+    const busca = searchInput.value.toLowerCase();
+    const cat = categoriaSelect.value;
+    const filtrados = filmes.filter(f =>
+      (!busca || f.title.toLowerCase().includes(busca)) &&
+      (!cat || f.category === cat)
+    );
+
+    lista.innerHTML = "";
+    filtrados.forEach(f => {
+      const item = document.createElement("div");
+      const marcado = selecionados.has(f.id);
+      item.style.cssText = `
+        display:flex;align-items:center;gap:10px;padding:8px 12px;
+        border-radius:10px;cursor:pointer;
+        background:${marcado ? "rgba(209,8,172,0.25)" : "rgba(255,255,255,0.05)"};
+        border:1px solid ${marcado ? "#d108ac" : "transparent"};
+        transition:background 0.15s;
+      `;
+      item.innerHTML = `
+        <input type="checkbox" ${marcado ? "checked" : ""} style="accent-color:#d108ac;width:16px;height:16px;cursor:pointer;">
+        <span style="color:#fff;font-size:13px;flex:1;">${f.title}</span>
+        <span style="color:#888;font-size:11px;">${f.year} · ${f.category}</span>
+      `;
+      item.addEventListener("click", () => {
+        if (selecionados.has(f.id)) selecionados.delete(f.id);
+        else selecionados.add(f.id);
+        renderLista();
+      });
+      lista.appendChild(item);
+    });
+  }
+
+  renderLista();
+  searchInput.addEventListener("input", renderLista);
+  categoriaSelect.addEventListener("change", renderLista);
+
+  document.getElementById("btnSelecionarTodos").onclick = () => {
+    const busca = searchInput.value.toLowerCase();
+    const cat = categoriaSelect.value;
+    filmes.filter(f =>
+      (!busca || f.title.toLowerCase().includes(busca)) &&
+      (!cat || f.category === cat)
+    ).forEach(f => selecionados.add(f.id));
+    renderLista();
+  };
+
+  document.getElementById("btnDesmarcarTodos").onclick = () => {
+    selecionados.clear();
+    renderLista();
+  };
+
+  // Importar quantidade aleatória se nenhum marcado
+  document.getElementById("btnConfirmarFilmes").onclick = () => {
+    const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+    let fonte = selecionados.size > 0
+      ? filmes.filter(f => selecionados.has(f.id))
+      : filmes;
+
+    const qtd = Math.min(parseInt(qtdInput.value) || 5, fonte.length);
+
+    // Embaralha e pega a quantidade desejada (só se não tiver seleção manual)
+    if (selecionados.size === 0) {
+      fonte = [...fonte].sort(() => Math.random() - 0.5).slice(0, qtd);
+    }
+
+    let adicionados = 0;
+    for (const f of fonte) {
+      if (!nomes.includes(f.title)) {
+        nomes.push(f.title);
+        cores.push(modo === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+        adicionados++;
+      }
+    }
+
+    salvar();
+    gerarBuffer();
+    desenhar();
+    embaralhar();
+    atualizarCentro();
+    atualizar();
+    document.body.removeChild(overlay);
+    alert(`✅ ${adicionados} filme(s) adicionado(s)!`);
+  };
+
+  document.getElementById("btnCancelarFilmes").onclick = () => {
+    document.body.removeChild(overlay);
+  };
+
+  overlay.addEventListener("click", e => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
+}
+
+document.getElementById("btnFilmes").addEventListener("click", abrirModalFilmes);
