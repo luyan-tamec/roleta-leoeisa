@@ -229,7 +229,7 @@ async function abrirModalFilmes() {
   let filmes = [];
 
   try {
-    const res = await fetch("https://leoeisa-cmgn.onrender.com/filmes");
+    const res = await fetch("https://cinevote.onrender.com/filmes");
     filmes = await res.json();
   } catch (e) {
     alert("Erro ao buscar filmes. Verifique a conexão.");
