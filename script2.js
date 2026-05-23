@@ -56,10 +56,8 @@ canvas.addEventListener('mousedown', (e) => {
 
 canvas.addEventListener('mousemove', (e) => {
   if (!mouseDown || girando) return;
-
   const dx = Math.abs(e.clientX - startX);
   const dy = Math.abs(e.clientY - startY);
-
   if (dx > LIMIAR || dy > LIMIAR) {
     iniciouArraste = true;
   }
@@ -69,7 +67,6 @@ canvas.addEventListener('mouseup', () => {
   if (mouseDown && iniciouArraste && !girando) {
     girar();
   }
-
   mouseDown = false;
   iniciouArraste = false;
 });
@@ -79,9 +76,9 @@ function girar() {
     alert('Adiciona um nome Aê Paizao.');
     return;
   }
-  const meucheckmusic = document.getElementById("meucheckmusic")
+  const meucheckmusic = document.getElementById("meucheckmusic");
   if (meucheckmusic.checked) {
-    document.getElementById("btnMusica").click()
+    document.getElementById("btnMusica").click();
     musica.currentTime = 5;
   }
   if (girando) return;
@@ -112,7 +109,6 @@ function girar() {
     giroFrameId = requestAnimationFrame(loop);
   }
   giroFrameId = requestAnimationFrame(loop);
-
 }
 
 function parar() {
@@ -149,27 +145,14 @@ function suave() {
       setTimeout(() => {
         musica.pause();
         musica.currentTime = 0;
-        tocandoMusica = false;
         document.getElementById('btnMusica').textContent = '🎵 Tocar Música';
       }, 3000);
       setTimeout(() => {
         document.body.classList.remove('painel-oculto');
         btnMostrar.style.display = 'none';
-
-        timer = null;
-        roleta.style.borderColor = '#f6f0f3ff';
-        roleta.style.boxShadow = `0 0 0px #ffffffff`;
-        roleta.style.backgroundColor = 'transparent';
-        painel.style.boxShadow = `0 0 0px #ffffffff`;
-        fundo.style.background = '#000000b8';
-
+        // Para a animação de cor da roleta (corrigido — sem localStorage)
+        if (typeof pararAnimacaoRoleta === 'function') pararAnimacaoRoleta();
       }, 2000);
-      let intervaloId = localStorage.getItem("interval")
-      setTimeout(() => {
-        clearInterval(intervaloId)
-        intervaloId = null;
-
-      }, 1900);
       destacar(i);
       mostrarVencedor(v);
     }

@@ -9,11 +9,10 @@
   <link rel="stylesheet" href="styles/code-vote.css">
   <link rel="stylesheet" href="styles/search.css">
   <link rel="shortcut icon" href="img/will.png" type="image/x-icon">
-
 </head>
 
 <body id="fundo">
-  <!----------------------Menu Sidebar---------------------------------------------->
+  <!-- Menu Sidebar YouTube -->
   <button class="botaomenu" onclick="toggleMenu()">Youtube</button>
   <div id="menu" class="menusidebar">
     <div class="controls-side">
@@ -25,23 +24,18 @@
     </div>
     <script>
       const apiKey = "AIzaSyB1wkiHkuvoxQ-C48-_8ZIAuyVsHqMvtgE";
-      let busca = "";
 
       function buscarVideos() {
-        busca = document.getElementById("busca").value;
+        const busca = document.getElementById("busca").value;
         const resultado = busca.replace(/\s+/g, "+");
-        console.log(resultado);
         fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${resultado}&key=${apiKey}&maxResults=10`)
           .then(res => res.json())
           .then(data => {
             const div = document.getElementById("videos");
-            div.innerHTML = ` `;
+            div.innerHTML = "";
             data.items.forEach(video => {
-
               const cartao = document.createElement("div");
               cartao.classList.add("cartao-video");
-
-
               const videoId = video.id.videoId;
               const iframe = document.createElement("iframe");
               iframe.width = "100%";
@@ -49,36 +43,31 @@
               iframe.src = `https://www.youtube.com/embed/${videoId}`;
               iframe.frameBorder = "0";
               iframe.allowFullscreen = true;
-
               const title = document.createElement("p");
               title.textContent = video.snippet.title;
-
               cartao.appendChild(iframe);
               cartao.appendChild(title);
               div.appendChild(cartao);
             });
           });
-      };
+      }
+
       const menu = document.getElementById("menu");
       function toggleMenu() {
-        if (menu.style.display === "block") {
-          menu.classList.toggle("show");
-        } else {
-          menu.classList.toggle("show");
-        }
+        menu.classList.toggle("show");
       }
     </script>
   </div>
-  <!-- ------------------------------------------------------------------------------>
+
   <div class="layout">
     <div id="arena"></div>
     <div class="painel">
       <div class="cartao" id="painel">
         <h1 id="titulo" class="titulo" style="margin:20px; font-size:14px;">roulette laughing and supporting!!</h1>
-        <!------------------------------------------------------------------------------------------------->
+
         <div class="controls">
           <button id="esconder-btn-top" class="esconder-btn">mais opçoes🔽</button>
-          <!------------------------------------------------------------------------------------------------->
+
           <div id="bloco-top" class="bloco-top">
             <button id="btnOcultarPainel" style="height: 38px;">🙈 Ocultar Painel</button>
             <input class="caixacheck" type="checkbox" id="meucheck" checked>
@@ -95,9 +84,8 @@
               <option value="z-index: 999;">Boneco A frente da roleta</option>
             </select>
           </div>
-          <!------------------------------------------------------------------------------------------------->
-          <div class="blocoessencial">
 
+          <div class="blocoessencial">
             <input id="nome" type="text" placeholder="Digite um nome">
             <input id="quantidade" type="number" min="1" value="" placeholder="quantidade" style="width:80px;">
             <button id="btnAdicionar">Adicionar</button>
@@ -106,9 +94,9 @@
             <button class="btnembaralhar" id="btnEmbaralhar">🔀 Embaralhar</button>
             <button id="btnIniciar" style="background-color:#43a047;color:#fff;" onclick="iniciar()">Iniciar</button>
             <button id="btnParar" style="background-color:#e53935;color:#fff;">Parar</button><br>
+
             <section style="width: 90%;">
-              <select name="sons" id="sons"
-                style="width: 100%; background-color: rgb(120, 8, 88); color: white; overflow: auto;">
+              <select name="sons" id="sons" style="width: 100%; background-color: rgb(120, 8, 88); color: white; overflow: auto;">
                 <option value="0" selected>Silvio Santos (padrao)</option>
                 <option value="1">Sou humano (gospel)</option>
                 <option value="2">Como zaquel (gospel)</option>
@@ -127,24 +115,23 @@
                 <option value="15">uni duni te (balao magico)</option>
                 <option value="16">No baile nois é midia (mc poze anos 90)</option>
                 <option value="17">Musica padrao de sorteio (generica mixuruca)</option>
+                 <option value="18">Nirvana - Smells like teeen spirit (remix)</option>
               </select><br>
-              <div class="div-check-music" alt="TOCAR MUSICA AO GIRAR" title="">
-                <input class="caixacheckmusic" type="checkbox" id="meucheckmusic" checked>
+              <div class="div-check-music" title="Tocar música ao girar">
+                <input class="caixacheckmusic" type="checkbox" id="meucheckmusic" >
                 <label for="meucheckmusic"></label>
                 <span class="tooltip-text">Tocar musica ao girar</span>
               </div>
-
               <input type="range" min="0" value="0" max="360" id="tempo-msc" class="tempo-msc" style="width: 80%;">
               <label id="span-tempo" for="tempo-msc">Tempo da Musica</label>
-              <button id="btn" style="display: none;">Play</button>
-              <input type="range" name="Volume" id="input-vol" min="0" value="2" max="100" style="display: none;">
               <div id="render"></div>
             </section>
+
             <button class="musica" id="btnMusica">🎵 Tocar Música</button>
             <button id="btnFullscreen">🖥️ Tela Cheia</button>
-
             <button id="btnLimpar">🧹 Limpar Tudo</button>
             <button id="btn-voto">VOTAÇAO S/N</button>
+
             <label style="display:flex;align-items:center;gap:6px;color:#ccc;">
               🔊vol.musica
               <input type="range" id="volumeMusica" min="0" max="10" value="1" style="width:120px;">
@@ -153,17 +140,17 @@
               🔔vol.seta
               <input type="range" id="volTick" min="0" max="10" value="10" style="width:120px;">
             </label>
-            <div id="vote-widget" class="votos-widget" >
-              <button id="linkobs" style=" display: flex; width: 50%; font-size: 0.5rem; height: 20px; text-align: center; margin-bottom: 20px; justify-content: center; align-items: center;" >link para overlay obs📋</button>
+
+            <div id="vote-widget" class="votos-widget">
+              <button id="linkobs" style="display:flex;width:50%;font-size:0.5rem;height:20px;text-align:center;margin-bottom:20px;justify-content:center;align-items:center;">link para overlay obs📋</button>
             </div>
           </div>
         </div>
-        <!------------------------------------------------------------------------------------------------->
+
         <button id="esconder-btn" class="esconder-btn">mais opçoes🔽</button>
         <div class="extras" id="extra">
           <input type="file" id="inputCSV" accept=".csv" style="display:none;">
           <button id="btnImportar">📥 Importar CSV</button>
-
           <select id="colunaCSV">
             <option value="0">Coluna 1</option>
             <option value="1">Coluna 2</option>
@@ -173,14 +160,13 @@
           <button id="btnExportar">📤 Exportar CSV</button>
         </div>
       </div>
-      <!------------------------------------------------------------------------------------------------->
+
       <div id="ultimosVencedores">
         <strong>🏆 Últimos Vencedores</strong>
         <div id="listaVencedores"></div>
-        <button id="btnLimparVencedores" style="margin-top:8px;background:#e53935;color:#fff;height:35px;">🗑️ Limpar
-          Vencedores</button>
+        <button id="btnLimparVencedores" style="margin-top:8px;background:#e53935;color:#fff;height:35px;">🗑️ Limpar Vencedores</button>
       </div>
-      <!------------------------------------------------------------------------------------------------->
+
       <div class="cartaonomes" id="cartaonames">
         <div id="input-group">
           <input id="search" type="text" class="input-field" placeholder="Pesquisar">
@@ -188,7 +174,7 @@
         <div id="listaNomes"></div>
       </div>
     </div>
-    <!------------------------------------------------------------------------------------------------->
+
     <div id="container">
       <div class="seta"></div>
       <canvas id="roleta"></canvas>
@@ -201,12 +187,10 @@
     </div>
   </div>
 
-  <button id="btnMostrarPainel" style="display:none;">
-    📋 Mostrar Painel
-  </button>
-  <footer>
-    @Todos os direitos reservados a empresa Rindo & Apoiando 2026
-  </footer>
+  <button id="btnMostrarPainel" style="display:none;">📋 Mostrar Painel</button>
+
+  <footer>@Todos os direitos reservados a empresa Rindo &amp; Apoiando 2026</footer>
+
   <script src="tmi.min.js" defer></script>
   <script src="script.js" defer></script>
   <script src="script2.js" defer></script>
