@@ -229,7 +229,7 @@ async function abrirModalFilmes() {
   let filmes = [];
 
   try {
-    const res = await fetch("https://cinevote.onrender.com/filmes");
+    const res = await fetch("https://leoeisa-cmgn.onrender.com/filmes");
     filmes = await res.json();
   } catch (e) {
     alert("Erro ao buscar filmes. Verifique a conexão.");
@@ -310,6 +310,7 @@ async function abrirModalFilmes() {
   const qtdInput = document.getElementById("filmeQtd");
 
   let selecionados = new Set();
+  let qtdPorFilme = {}; // id -> quantidade de vezes na roleta
 
   function renderLista() {
     const busca = searchInput.value.toLowerCase();
@@ -321,8 +322,9 @@ async function abrirModalFilmes() {
 
     lista.innerHTML = "";
     filtrados.forEach(f => {
-      const item = document.createElement("div");
+      if (!qtdPorFilme[f.id]) qtdPorFilme[f.id] = 1;
       const marcado = selecionados.has(f.id);
+      const item = document.createElement("div");
       item.style.cssText = `
         display:flex;align-items:center;gap:10px;padding:8px 12px;
         border-radius:10px;cursor:pointer;
@@ -330,16 +332,65 @@ async function abrirModalFilmes() {
         border:1px solid ${marcado ? "#d108ac" : "transparent"};
         transition:background 0.15s;
       `;
-      item.innerHTML = `
-        <input type="checkbox" ${marcado ? "checked" : ""} style="accent-color:#d108ac;width:16px;height:16px;cursor:pointer;">
-        <span style="color:#fff;font-size:13px;flex:1;">${f.title}</span>
-        <span style="color:#888;font-size:11px;">${f.year} · ${f.category}</span>
+
+      // checkbox + nome + ano/cat
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.checked = marcado;
+      check.style.cssText = "accent-color:#d108ac;width:16px;height:16px;cursor:pointer;flex-shrink:0;";
+
+      const titulo = document.createElement("span");
+      titulo.style.cssText = "color:#fff;font-size:13px;flex:1;";
+      titulo.textContent = f.title;
+
+      const info = document.createElement("span");
+      info.style.cssText = "color:#888;font-size:11px;white-space:nowrap;";
+      info.textContent = `${f.year} · ${f.category}`;
+
+      // controle de quantidade por filme
+      const controle = document.createElement("div");
+      controle.style.cssText = "display:flex;align-items:center;gap:4px;flex-shrink:0;";
+      controle.innerHTML = `
+        <button class="btn-preset" data-v="1"  style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">1x</button>
+        <button class="btn-preset" data-v="10" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">10x</button>
+        <button class="btn-preset" data-v="20" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">20x</button>
+        <input class="qtd-custom" type="number" min="1" value="${qtdPorFilme[f.id]}" style="
+          width:46px;padding:3px 6px;border-radius:8px;border:1px solid #d108ac;
+          background:#222;color:#d108ac;font-size:12px;font-weight:700;text-align:center;
+        ">
       `;
+
+      // Presets
+      controle.querySelectorAll(".btn-preset").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          const v = parseInt(btn.dataset.v);
+          qtdPorFilme[f.id] = v;
+          controle.querySelector(".qtd-custom").value = v;
+          controle.querySelectorAll(".btn-preset").forEach(b => b.style.background = "#444");
+          btn.style.background = "#d108ac";
+        });
+      });
+
+      // Input livre
+      controle.querySelector(".qtd-custom").addEventListener("click", e => e.stopPropagation());
+      controle.querySelector(".qtd-custom").addEventListener("input", e => {
+        const v = Math.max(1, parseInt(e.target.value) || 1);
+        qtdPorFilme[f.id] = v;
+        controle.querySelectorAll(".btn-preset").forEach(b => b.style.background = "#444");
+      });
+
+      item.appendChild(check);
+      item.appendChild(titulo);
+      item.appendChild(info);
+      item.appendChild(controle);
+
       item.addEventListener("click", () => {
         if (selecionados.has(f.id)) selecionados.delete(f.id);
         else selecionados.add(f.id);
         renderLista();
       });
+
       lista.appendChild(item);
     });
   }
@@ -363,27 +414,26 @@ async function abrirModalFilmes() {
     renderLista();
   };
 
-  // Importar quantidade aleatória se nenhum marcado
   document.getElementById("btnConfirmarFilmes").onclick = () => {
     const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
     let fonte = selecionados.size > 0
       ? filmes.filter(f => selecionados.has(f.id))
       : filmes;
 
-    const qtd = Math.min(parseInt(qtdInput.value) || 5, fonte.length);
-
-    // Embaralha e pega a quantidade desejada (só se não tiver seleção manual)
+    // Se nenhum selecionado, pega quantidade aleatória
     if (selecionados.size === 0) {
+      const qtd = Math.min(parseInt(qtdInput.value) || 5, fonte.length);
       fonte = [...fonte].slice(0, qtd);
     }
 
     let adicionados = 0;
     for (const f of fonte) {
-      if (!nomes.includes(f.title)) {
+      const vezes = qtdPorFilme[f.id] || 1;
+      for (let i = 0; i < vezes; i++) {
         nomes.push(f.title);
         cores.push(modo === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
-        adicionados++;
       }
+      adicionados++;
     }
 
     salvar();
