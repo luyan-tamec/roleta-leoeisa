@@ -354,7 +354,7 @@ async function abrirModalFilmes() {
         <button class="btn-preset" data-v="1"  style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">1x</button>
         <button class="btn-preset" data-v="10" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">10x</button>
         <button class="btn-preset" data-v="20" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">20x</button>
-        <input class="qtd-custom" type="number" min="1" value="${qtdPorFilme[f.id]}" style="
+        <input class="qtd-custom" type="number" min="1" value="0" style="
           width:46px;padding:3px 6px;border-radius:8px;border:1px solid #d108ac;
           background:#222;color:#d108ac;font-size:12px;font-weight:700;text-align:center;
         ">
@@ -365,19 +365,25 @@ async function abrirModalFilmes() {
         btn.addEventListener("click", e => {
           e.stopPropagation();
           const v = parseInt(btn.dataset.v);
-          qtdPorFilme[f.id] = v;
-          controle.querySelector(".qtd-custom").value = v;
-          controle.querySelectorAll(".btn-preset").forEach(b => b.style.background = "#444");
-          btn.style.background = "#d108ac";
+          const input = controle.querySelector(".qtd-custom");
+          const atual = parseInt(input.value) || 0;
+          const novo = atual + v;
+          input.value = novo;
+          qtdPorFilme[f.id] = novo;
         });
       });
 
       // Input livre
       controle.querySelector(".qtd-custom").addEventListener("click", e => e.stopPropagation());
       controle.querySelector(".qtd-custom").addEventListener("input", e => {
-        const v = Math.max(1, parseInt(e.target.value) || 1);
-        qtdPorFilme[f.id] = v;
-        controle.querySelectorAll(".btn-preset").forEach(b => b.style.background = "#444");
+        const v = Math.max(0, parseInt(e.target.value) || 0);
+        qtdPorFilme[f.id] = Math.max(1, v);
+      });
+      controle.querySelector(".qtd-custom").addEventListener("blur", e => {
+        if (!e.target.value || parseInt(e.target.value) < 1) {
+          e.target.value = 1;
+          qtdPorFilme[f.id] = 1;
+        }
       });
 
       item.appendChild(check);
