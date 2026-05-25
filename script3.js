@@ -243,7 +243,7 @@ async function abrirModalFilmes() {
   let filmes = [];
 
   try {
-    const res = await fetch("https://cinevote.onrender.com/filmes");
+    const res = await fetch("https://leoeisa-cmgn.onrender.com/filmes");
     filmes = await res.json();
   } catch (e) {
     alert("Erro ao buscar filmes. Verifique a conexão.");
@@ -264,7 +264,10 @@ async function abrirModalFilmes() {
       padding:24px;width:min(95vw,480px);max-height:85vh;
       display:flex;flex-direction:column;gap:12px;
     ">
-      <h2 style="margin:0;color:#fff;text-align:center;font-size:1.1rem;">🎬 Importar Filmes para a Roleta</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 style="margin:0;color:#fff;font-size:1.1rem;">🎬 Importar Filmes para a Roleta</h2>
+        <span id="contadorSelecionados" style="color:#d108ac;font-weight:700;font-size:13px;background:rgba(209,8,172,0.15);padding:4px 10px;border-radius:20px;">0 selecionados</span>
+      </div>
 
       <div style="display:flex;gap:8px;align-items:center;">
         <input id="filmeSearch" type="text" placeholder="Pesquisar filme..." style="
@@ -333,6 +336,10 @@ async function abrirModalFilmes() {
       (!busca || f.title.toLowerCase().includes(busca)) &&
       (!cat || f.category === cat)
     );
+
+    // Atualiza contador
+    const contador = document.getElementById("contadorSelecionados");
+    if (contador) contador.textContent = `${selecionados.size} selecionado${selecionados.size !== 1 ? "s" : ""}`;
 
     lista.innerHTML = "";
     filtrados.forEach(f => {
