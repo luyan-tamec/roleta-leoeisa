@@ -84,11 +84,10 @@ function mostrarVencedor(nm) {
   overlay.textContent = `🎉✨🎈 ${nm} 🎉✨🎈 `;
   overlay.classList.remove('mostrar');
   void overlay.offsetWidth;
-  const texto = overlay.textContent.trim();
   if (nm.length > 10) {
-    overlay.style.fontSize = "15px"
-  } else if (nm.length <= 10) {
-    overlay.style.fontSize = "30px"
+    overlay.style.fontSize = "15px";
+  } else {
+    overlay.style.fontSize = "30px";
   }
   overlay.classList.add('mostrar');
   clearTimeout(overlay._timeoutId);
@@ -98,6 +97,21 @@ function mostrarVencedor(nm) {
   }, 4000);
   vencedores.push(nm);
   salvarVencedores();
+
+  // Remover vencedor automaticamente se opção ativada
+  const autoRemover = document.getElementById('checkAutoRemover');
+  if (autoRemover && autoRemover.checked) {
+    const idx = nomes.lastIndexOf(nm);
+    if (idx !== -1) {
+      nomes.splice(idx, 1);
+      cores.splice(idx, 1);
+      salvar();
+      gerarBuffer();
+      desenhar();
+      atualizar();
+      atualizarCentro();
+    }
+  }
 }
 
 
@@ -333,6 +347,16 @@ async function abrirModalFilmes() {
         transition:background 0.15s;
       `;
 
+      // poster thumbnail
+      const poster = document.createElement("img");
+      poster.src = f.poster || "";
+      poster.alt = f.title;
+      poster.style.cssText = `
+        width:48px;height:28px;object-fit:cover;border-radius:6px;
+        flex-shrink:0;background:#222;
+        ${!f.poster ? "display:none;" : ""}
+      `;
+
       // checkbox + nome + ano/cat
       const check = document.createElement("input");
       check.type = "checkbox";
@@ -387,6 +411,7 @@ async function abrirModalFilmes() {
       });
 
       item.appendChild(check);
+      item.appendChild(poster);
       item.appendChild(titulo);
       item.appendChild(info);
       item.appendChild(controle);
