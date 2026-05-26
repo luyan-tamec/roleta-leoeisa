@@ -73,6 +73,10 @@
             <input class="caixacheck" type="checkbox" id="meucheck" checked>
             <label for="meucheck">ocultar <br> painel <br>automaticamente</label>
             <button id="btnTema">Tema</button>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <input class="caixacheck" type="checkbox" id="checkTemaRotar" checked>
+              <label for="checkTemaRotar" style="font-size:11px;color:#ccc;line-height:1.3;">trocar<br>tema<br>auto</label>
+            </div>
             <select id="modoCor">
               <option value="colorido" selected>🏳‍🌈 cores do vale</option>
               <option value="neutro">⚪ cores Neutras</option>
@@ -117,7 +121,7 @@
                 <option value="17">Musica padrao de sorteio (generica mixuruca)</option>
               </select><br>
               <div class="div-check-music" title="Tocar música ao girar">
-                <input class="caixacheckmusic" type="checkbox" id="meucheckmusic" checked>
+                <input class="caixacheckmusic" type="checkbox" id="meucheckmusic">
                 <label for="meucheckmusic"></label>
                 <span class="tooltip-text">Tocar musica ao girar</span>
               </div>
@@ -131,7 +135,7 @@
             <button id="btnFilmes" style="background-color:#e87c00;color:#fff;">🎬 Importar Filmes</button>
             <button id="btnLimpar">🧹 Limpar Tudo</button>
 
-            <div style="display:flex;background-color:#e87c00;border-radius:20px;align-items:center;gap:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
               <input class="caixacheck" type="checkbox" id="checkAutoRemover">
               <label for="checkAutoRemover" style="font-size:12px;color:#ccc;line-height:1.3;">remover<br>vencedor<br>auto</label>
             </div>

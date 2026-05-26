@@ -494,3 +494,294 @@ async function abrirModalFilmes() {
 }
 
 document.getElementById("btnFilmes").addEventListener("click", abrirModalFilmes);
+
+
+// ===== TEMAS =====
+
+const TEMAS = [
+  {
+    nome: "Padrão Rosa",
+    emoji: "🌸",
+    vars: {
+      "--tema-fundo": "#111",
+      "--tema-acento": "#d108ac",
+      "--tema-borda-topo": "#d108ac",
+      "--tema-borda-baixo": "#eee9ed",
+      "--tema-cartao": "rgba(0,0,0,0.526)",
+      "--tema-seta": "#e53935",
+      "--tema-btn-iniciar": "#43a047",
+      "--tema-btn-parar": "#e53935",
+      "--tema-canvas-hover": "#e012d6",
+      "--tema-bg-image": "url('img/leoeisa.png')",
+    }
+  },
+  {
+    nome: "Oceano",
+    emoji: "🌊",
+    vars: {
+      "--tema-fundo": "#0a0e1a",
+      "--tema-acento": "#00b4d8",
+      "--tema-borda-topo": "#00b4d8",
+      "--tema-borda-baixo": "#90e0ef",
+      "--tema-cartao": "rgba(0,20,50,0.7)",
+      "--tema-seta": "#0077b6",
+      "--tema-btn-iniciar": "#0096c7",
+      "--tema-btn-parar": "#023e8a",
+      "--tema-canvas-hover": "#00b4d8",
+      "--tema-bg-image": "none",
+    }
+  },
+  {
+    nome: "Floresta",
+    emoji: "🌿",
+    vars: {
+      "--tema-fundo": "#0a1a0a",
+      "--tema-acento": "#52b788",
+      "--tema-borda-topo": "#52b788",
+      "--tema-borda-baixo": "#b7e4c7",
+      "--tema-cartao": "rgba(0,30,10,0.7)",
+      "--tema-seta": "#2d6a4f",
+      "--tema-btn-iniciar": "#40916c",
+      "--tema-btn-parar": "#1b4332",
+      "--tema-canvas-hover": "#74c69d",
+      "--tema-bg-image": "none",
+    }
+  },
+  {
+    nome: "Pôr do Sol",
+    emoji: "🌅",
+    vars: {
+      "--tema-fundo": "#1a0a00",
+      "--tema-acento": "#f77f00",
+      "--tema-borda-topo": "#f77f00",
+      "--tema-borda-baixo": "#fcbf49",
+      "--tema-cartao": "rgba(40,10,0,0.7)",
+      "--tema-seta": "#d62828",
+      "--tema-btn-iniciar": "#f77f00",
+      "--tema-btn-parar": "#d62828",
+      "--tema-canvas-hover": "#fcbf49",
+      "--tema-bg-image": "none",
+    }
+  },
+  {
+    nome: "Galáxia",
+    emoji: "🔮",
+    vars: {
+      "--tema-fundo": "#05000f",
+      "--tema-acento": "#7b2fff",
+      "--tema-borda-topo": "#7b2fff",
+      "--tema-borda-baixo": "#c77dff",
+      "--tema-cartao": "rgba(20,0,40,0.75)",
+      "--tema-seta": "#9d4edd",
+      "--tema-btn-iniciar": "#5a189a",
+      "--tema-btn-parar": "#3c096c",
+      "--tema-canvas-hover": "#c77dff",
+      "--tema-bg-image": "none",
+    }
+  },
+  {
+    nome: "Fogo",
+    emoji: "🔥",
+    vars: {
+      "--tema-fundo": "#100500",
+      "--tema-acento": "#ff4800",
+      "--tema-borda-topo": "#ff4800",
+      "--tema-borda-baixo": "#ffca3a",
+      "--tema-cartao": "rgba(40,5,0,0.75)",
+      "--tema-seta": "#ff0000",
+      "--tema-btn-iniciar": "#e85d04",
+      "--tema-btn-parar": "#9d0208",
+      "--tema-canvas-hover": "#ffca3a",
+      "--tema-bg-image": "none",
+    }
+  },
+  {
+    nome: "Gelo",
+    emoji: "❄️",
+    vars: {
+      "--tema-fundo": "#050d1a",
+      "--tema-acento": "#a8dadc",
+      "--tema-borda-topo": "#a8dadc",
+      "--tema-borda-baixo": "#e8f4f8",
+      "--tema-cartao": "rgba(5,20,40,0.75)",
+      "--tema-seta": "#457b9d",
+      "--tema-btn-iniciar": "#457b9d",
+      "--tema-btn-parar": "#1d3557",
+      "--tema-canvas-hover": "#a8dadc",
+      "--tema-bg-image": "none",
+    }
+  },
+  {
+    nome: "Ouro Negro",
+    emoji: "✨",
+    vars: {
+      "--tema-fundo": "#0a0800",
+      "--tema-acento": "#ffd700",
+      "--tema-borda-topo": "#ffd700",
+      "--tema-borda-baixo": "#fff8dc",
+      "--tema-cartao": "rgba(20,15,0,0.8)",
+      "--tema-seta": "#b8860b",
+      "--tema-btn-iniciar": "#b8860b",
+      "--tema-btn-parar": "#8b6914",
+      "--tema-canvas-hover": "#ffd700",
+      "--tema-bg-image": "none",
+    }
+  },
+  {
+    nome: "Cyberpunk",
+    emoji: "🤖",
+    vars: {
+      "--tema-fundo": "#020010",
+      "--tema-acento": "#00ff9f",
+      "--tema-borda-topo": "#ff2079",
+      "--tema-borda-baixo": "#00ff9f",
+      "--tema-cartao": "rgba(0,0,20,0.85)",
+      "--tema-seta": "#ff2079",
+      "--tema-btn-iniciar": "#00ff9f",
+      "--tema-btn-parar": "#ff2079",
+      "--tema-canvas-hover": "#00ff9f",
+      "--tema-bg-image": "none",
+    }
+  },
+  {
+    nome: "Cereja",
+    emoji: "🍒",
+    vars: {
+      "--tema-fundo": "#1a0008",
+      "--tema-acento": "#e63980",
+      "--tema-borda-topo": "#e63980",
+      "--tema-borda-baixo": "#ffb3c6",
+      "--tema-cartao": "rgba(40,0,15,0.75)",
+      "--tema-seta": "#c9184a",
+      "--tema-btn-iniciar": "#c9184a",
+      "--tema-btn-parar": "#800f2f",
+      "--tema-canvas-hover": "#ffb3c6",
+      "--tema-bg-image": "none",
+    }
+  },
+];
+
+function aplicarTema(tema) {
+  const root = document.documentElement;
+  Object.entries(tema.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+  localStorage.setItem(PREFIX + "tema", JSON.stringify(tema.vars));
+
+  // aplica nas variáveis CSS usadas diretamente
+  document.getElementById("btnIniciar").style.backgroundColor = tema.vars["--tema-btn-iniciar"];
+  document.getElementById("btnParar").style.backgroundColor = tema.vars["--tema-btn-parar"];
+  document.querySelector(".seta").style.borderTopColor = tema.vars["--tema-seta"];
+
+  const cartao = document.getElementById("painel");
+  if (cartao) {
+    cartao.style.borderTop = `3px solid ${tema.vars["--tema-borda-topo"]}`;
+    cartao.style.borderBottom = `4px solid ${tema.vars["--tema-borda-baixo"]}`;
+    cartao.style.backgroundColor = tema.vars["--tema-cartao"];
+  }
+
+  // Fundo com imagem ou cor
+  const style = document.getElementById("tema-style") || document.createElement("style");
+  style.id = "tema-style";
+  style.textContent = `
+    canvas:hover { border-color: ${tema.vars["--tema-canvas-hover"]} !important; box-shadow: 0 0 60px ${tema.vars["--tema-canvas-hover"]} !important; }
+    .esconder-btn { background-color: ${tema.vars["--tema-acento"]}88 !important; }
+    #btnOcultarPainel, #btnMostrarPainel, .botaomenu { background: linear-gradient(45deg, ${tema.vars["--tema-acento"]}, ${tema.vars["--tema-borda-baixo"]}) !important; }
+    input[type="checkbox"] { accent-color: ${tema.vars["--tema-acento"]} !important; }
+    .caixacheckmusic { accent-color: ${tema.vars["--tema-acento"]} !important; }
+    #tempo-msc { accent-color: ${tema.vars["--tema-acento"]} !important; }
+    option { background-color: ${tema.vars["--tema-fundo"]} !important; }
+  `;
+  document.head.appendChild(style);
+}
+
+function abrirModalTemas() {
+  const temaSalvo = JSON.parse(localStorage.getItem(PREFIX + "tema") || "null");
+
+  const overlay = document.createElement("div");
+  overlay.id = "modalTemasOverlay";
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.85);
+    z-index:9999;display:flex;align-items:center;justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background:#1a1a1a;border:2px solid #d108ac;border-radius:20px;
+      padding:24px;width:min(95vw,500px);max-height:85vh;
+      display:flex;flex-direction:column;gap:16px;overflow-y:auto;
+    ">
+      <h2 style="margin:0;color:#fff;text-align:center;font-size:1.1rem;">🎨 Escolha um Tema</h2>
+      <div id="gradeThemas" style="
+        display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+      "></div>
+      <button id="btnFecharTemas" style="
+        padding:10px;border-radius:12px;background:#444;
+        color:#fff;border:none;cursor:pointer;font-weight:700;
+      ">Fechar</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const grade = document.getElementById("gradeThemas");
+
+  TEMAS.forEach((tema, idx) => {
+    const card = document.createElement("button");
+    card.style.cssText = `
+      padding:14px 10px;border-radius:14px;border:2px solid ${tema.vars["--tema-acento"]};
+      background:${tema.vars["--tema-cartao"]};color:#fff;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      font-size:13px;font-weight:700;transition:transform .15s;
+      box-shadow: 0 0 12px ${tema.vars["--tema-acento"]}55;
+    `;
+    card.innerHTML = `
+      <span style="font-size:28px;">${tema.emoji}</span>
+      <span>${tema.nome}</span>
+      <div style="display:flex;gap:4px;margin-top:4px;">
+        <div style="width:16px;height:16px;border-radius:50%;background:${tema.vars["--tema-acento"]};"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:${tema.vars["--tema-borda-topo"]};"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:${tema.vars["--tema-seta"]};"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:${tema.vars["--tema-btn-iniciar"]};"></div>
+      </div>
+    `;
+    card.addEventListener("mouseenter", () => card.style.transform = "scale(1.05)");
+    card.addEventListener("mouseleave", () => card.style.transform = "scale(1)");
+    card.addEventListener("click", () => {
+      aplicarTema(tema);
+      document.body.removeChild(overlay);
+    });
+    grade.appendChild(card);
+  });
+
+  document.getElementById("btnFecharTemas").onclick = () => document.body.removeChild(overlay);
+  overlay.addEventListener("click", e => { if (e.target === overlay) document.body.removeChild(overlay); });
+}
+
+// Restaura tema salvo ao carregar
+window.addEventListener("DOMContentLoaded", () => {
+  const autoRotar = localStorage.getItem(PREFIX + "temaAutoRotar") === "true";
+  const checkRotar = document.getElementById("checkTemaRotar");
+  if (checkRotar) checkRotar.checked = autoRotar;
+
+  if (autoRotar) {
+    const idxAtual = parseInt(localStorage.getItem(PREFIX + "temaIdx") || "0");
+    const proximo = (idxAtual + 1) % TEMAS.length;
+    localStorage.setItem(PREFIX + "temaIdx", proximo);
+    aplicarTema(TEMAS[proximo]);
+  } else {
+    const temaSalvo = localStorage.getItem(PREFIX + "tema");
+    if (temaSalvo) {
+      const vars = JSON.parse(temaSalvo);
+      const temaEncontrado = TEMAS.find(t => t.vars["--tema-acento"] === vars["--tema-acento"]);
+      if (temaEncontrado) aplicarTema(temaEncontrado);
+    }
+  }
+});
+
+document.getElementById("checkTemaRotar").addEventListener("change", e => {
+  localStorage.setItem(PREFIX + "temaAutoRotar", e.target.checked);
+  if (e.target.checked) {
+    localStorage.setItem(PREFIX + "temaIdx", "0");
+  }
+});
+
+document.getElementById("btnTema").addEventListener("click", abrirModalTemas);
