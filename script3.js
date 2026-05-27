@@ -760,6 +760,7 @@ function abrirModalTemas() {
 window.addEventListener("DOMContentLoaded", () => {
   const autoRotar = localStorage.getItem(PREFIX + "temaAutoRotar") === "true";
   const checkRotar = document.getElementById("checkTemaRotar");
+  checkRotar.ckecked = true
   if (checkRotar) checkRotar.checked = autoRotar;
 
   if (autoRotar) {
