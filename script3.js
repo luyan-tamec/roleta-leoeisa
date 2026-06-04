@@ -237,7 +237,7 @@ window.addEventListener('resize', ajustarCanvas);
 ajustarCanvas();
 carregar();
 
-// ===== IMPORTAR FILMES DA API DO SITE CINEVOTE =====
+// ===== IMPORTAR DO SITE ATRAVES DA API =====
 
 async function abrirModalFilmes() {
   let filmes = [];
@@ -785,3 +785,4 @@ document.getElementById("checkTemaRotar").addEventListener("change", e => {
 });
 
 document.getElementById("btnTema").addEventListener("click", abrirModalTemas);
+Temas);
