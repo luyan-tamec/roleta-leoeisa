@@ -243,7 +243,7 @@ async function abrirModalFilmes() {
   let filmes = [];
 
   try {
-    const res = await fetch("https://cinevote.onrender.com/api/movies");
+    const res = await fetch("https://cinevote.onrender.com/filmes");
     filmes = await res.json();
   } catch (e) {
     alert("Erro ao buscar filmes. Verifique a conexão.");
@@ -494,3 +494,4 @@ async function abrirModalFilmes() {
 }
 
 document.getElementById("btnFilmes").addEventListener("click", abrirModalFilmes);
+s);
