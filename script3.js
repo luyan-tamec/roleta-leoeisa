@@ -237,7 +237,7 @@ window.addEventListener('resize', ajustarCanvas);
 ajustarCanvas();
 carregar();
 
-// ===== IMPORTAR FILMES DA API =====
+// ===== IMPORTAR FILMES DA API DO SITE CINEVOTE =====
 
 async function abrirModalFilmes() {
   let filmes = [];
