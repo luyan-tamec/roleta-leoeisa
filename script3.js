@@ -237,7 +237,7 @@ window.addEventListener('resize', ajustarCanvas);
 ajustarCanvas();
 carregar();
 
-// ===== IMPORTAR DO SITE ATRAVES DA API =====
+// ===== IMPORTAR FILMES DA API =====
 
 async function abrirModalFilmes() {
   let filmes = [];
@@ -785,4 +785,5 @@ document.getElementById("checkTemaRotar").addEventListener("change", e => {
 });
 
 document.getElementById("btnTema").addEventListener("click", abrirModalTemas);
+lTemas);
 Temas);
