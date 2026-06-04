@@ -243,7 +243,7 @@ async function abrirModalFilmes() {
   let filmes = [];
 
   try {
-    const res = await fetch("https://leoeisa-cmgn.onrender.com/filmes");
+    const res = await fetch("https://cinevote.onrender.com/filmes");
     const json = await res.json();
     const data = json.movies || json;
 
@@ -595,3 +595,4 @@ function abrirModalTemas() {
   }
   document.getElementById("btnTema").addEventListener("click", abrirModalTemas);
 })();
+();
