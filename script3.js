@@ -571,7 +571,7 @@ function abrirModalTemas() {
 
 // Init — roda após defer carregar
 (function init() {
-  const autoRotar = localStorage.getItem(PREFIX + "temaAutoRotar") === "true";
+  const autoRotar = localStorage.getItem(PREFIX + "temaAutoRotar") !== "false";
   const checkRotar = document.getElementById("checkTemaRotar");
   if (checkRotar) {
     checkRotar.checked = autoRotar;
