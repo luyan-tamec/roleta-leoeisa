@@ -354,7 +354,7 @@ async function abrirModalFilmes() {
 
     lista.innerHTML = "";
     filtrados.forEach(f => {
-      if (!qtdPorFilme[f.id]) qtdPorFilme[f.id] = 1;
+      if (qtdPorFilme[f.id] === undefined) qtdPorFilme[f.id] = 0;
       const marcado = selecionados.has(f.id);
       const item = document.createElement("div");
       item.style.cssText = `
@@ -396,7 +396,7 @@ async function abrirModalFilmes() {
         <button class="btn-preset" data-v="1"  style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">1x</button>
         <button class="btn-preset" data-v="10" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">10x</button>
         <button class="btn-preset" data-v="20" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">20x</button>
-        <input class="qtd-custom" type="number" min="1" value="0" style="
+        <input class="qtd-custom" type="number" min="1" value="${qtdPorFilme[f.id]}" style="
           width:46px;padding:3px 6px;border-radius:8px;border:1px solid #d108ac;
           background:#222;color:#d108ac;font-size:12px;font-weight:700;text-align:center;
         ">
