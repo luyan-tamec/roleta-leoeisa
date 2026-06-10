@@ -2,7 +2,7 @@
 // Carrega configs do backend e aplica na roleta SEM precisar de F5.
 // Usa SSE (Server-Sent Events) para receber atualizações em tempo real.
 
-const ADMIN_BACKEND_URL = "http://localhost:3001"; // ← troque pela URL do Render
+const ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com"; // ← troque pela URL do Render
 
 // ─── FETCH INICIAL ────────────────────────────────────────────────────────────
 async function syncAdmin() {
@@ -127,11 +127,6 @@ function applyArena(arena) {
       if (arena.posicaoBoneco === "desativado") arenaEl.style.zIndex = "-3";
     }
   }
-
-  // Cores dos nomes — atualiza as variáveis do scrparena.js em tempo real
-  if (arena.nomeCores   !== undefined && typeof NOME_COR_MODO !== "undefined") window.NOME_COR_MODO = arena.nomeCores;
-  if (arena.nomeCorFixa !== undefined && typeof NOME_COR_FIXA !== "undefined") window.NOME_COR_FIXA = arena.nomeCorFixa;
-  if (arena.nomePaleta  !== undefined && typeof NOME_PALETA   !== "undefined") window.NOME_PALETA   = arena.nomePaleta;
 }
 
 // ─── APLICAR BONECOS ─────────────────────────────────────────────────────────
@@ -222,3 +217,4 @@ syncAdmin().then(() => {
     connectSSE();
   }
 });
+

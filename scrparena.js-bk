@@ -24,19 +24,6 @@ let USER_COOLDOWN   = _arenaAdmin?.userCooldown   ?? 15000;
 let GLOBAL_COOLDOWN = _arenaAdmin?.globalCooldown ?? 5000;
 let MAX_BONECOS     = _arenaAdmin?.maxBonecos     ?? 30;
 
-// Cores dos nomes — "aleatorio", "fixo" ou "desativado"
-let NOME_COR_MODO = _arenaAdmin?.nomeCores ?? "aleatorio";
-// Cor fixa (usada quando modo = "fixo")
-let NOME_COR_FIXA = _arenaAdmin?.nomeCorFixa ?? "#ffffff";
-// Paleta usada no modo aleatório (vazia = usa paleta padrão interna)
-let NOME_PALETA   = _arenaAdmin?.nomePaleta ?? [];
-
-const PALETA_PADRAO = [
-    "#ff6b9d", "#c084fc", "#67e8f9", "#86efac", "#fde68a",
-    "#fb923c", "#f87171", "#a78bfa", "#34d399", "#60a5fa",
-    "#f472b6", "#facc15", "#4ade80", "#38bdf8", "#e879f9",
-];
-
 // Posição dos bonecos via backend
 if (_arenaAdmin?.posicaoBoneco) {
     const arena = document.getElementById("arena");
@@ -118,16 +105,7 @@ function spawnBoneco(username) {
     boneco.classList.add("boneco");
     const nome = document.createElement("p");
     nome.classList.add("nome");
-    nome.textContent = username;
-
-    // Cor do nome
-    if (NOME_COR_MODO === "aleatorio") {
-        const paleta = NOME_PALETA.length > 0 ? NOME_PALETA : PALETA_PADRAO;
-        nome.style.color = paleta[Math.floor(Math.random() * paleta.length)];
-    } else if (NOME_COR_MODO === "fixo") {
-        nome.style.color = NOME_COR_FIXA;
-    }
-    // "desativado" = não aplica cor, usa o CSS padrão
+    nome.textContent = username
 
     // Escolhe imagem aleatória — prefere bonecos do backend se disponíveis
     const img = document.createElement("img");
