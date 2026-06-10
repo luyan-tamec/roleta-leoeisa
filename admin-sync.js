@@ -217,7 +217,4 @@ syncAdmin().then(() => {
     connectSSE();
   }
 });
-);
-  }
-});
 
