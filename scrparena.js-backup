@@ -1,43 +1,47 @@
 /* ===== CONFIG IMAGENS ===== */
-// Valores padrão — sobrescritos pelo backend se disponível
 
 const BONECOS_PATH = "bonecos/";
-let BONECOS_LIST = [
-    "image (1).png",  "image (2).png",  "image (3).png",  "image (4).png",
-    "image (5).png",  "image (6).png",  "image (7).png",  "image (8).png",
-    "image (9).png",  "image (10).png", "image (11).png", "image (12).png",
-    "image (13).png", "image (14).png", "image (15).png", "image (16).png",
-    "image (17).png", "image (18).png", "image (19).png", "image (20).png",
-    "image (21).png", "image (22).png", "image (23).png", "image (24).png",
-    "image (25).png", "image (26).png", "image (27).png", "image (28).png",
-    "image (29).png", "image (30).png", "image (31).png", "image (32).png"
+const BONECOS_LIST = [
+    "image (1).png",
+    "image (2).png",
+    "image (3).png",
+    "image (4).png",
+    "image (5).png",
+    "image (6).png",
+    "image (7).png",
+    "image (8).png",
+    "image (9).png",
+    "image (10).png",
+    "image (11).png",
+    "image (12).png",
+    "image (13).png",
+    "image (14).png",
+    "image (15).png",
+    "image (16).png",
+    "image (17).png",
+    "image (18).png",
+    "image (19).png",
+    "image (20).png",
+    "image (21).png",
+    "image (22).png",
+    "image (23).png",
+    "image (24).png",
+    "image (25).png",
+    "image (26).png",
+    "image (27).png",
+    "image (28).png",
+    "image (29).png",
+    "image (30).png",
+    "image (31).png",
+    "image (32).png"
 ];
-// URLs completas dos bonecos do backend (se disponível)
-let BONECOS_REMOTE = null;
 
-const channelName = (typeof adminGetConfig === "function" && adminGetConfig()?.channelName)
-    || "isaroza_";
 
-// Lê configs da arena do backend, com fallback nos valores originais
-const _arenaAdmin = (typeof adminGetArena === "function") ? adminGetArena() : null;
-let USER_COOLDOWN   = _arenaAdmin?.userCooldown   ?? 15000;
-let GLOBAL_COOLDOWN = _arenaAdmin?.globalCooldown ?? 5000;
-let MAX_BONECOS     = _arenaAdmin?.maxBonecos     ?? 30;
+const channelName = "isaroza_";
 
-// Posição dos bonecos via backend
-if (_arenaAdmin?.posicaoBoneco) {
-    const arena = document.getElementById("arena");
-    const sel   = document.getElementById("indexboneco");
-    if (_arenaAdmin.posicaoBoneco === "frente")     { if (arena) arena.style.zIndex = "999";  if (sel) sel.value = "z-index: 999;"; }
-    if (_arenaAdmin.posicaoBoneco === "atras")      { if (arena) arena.style.zIndex = "-2";   if (sel) sel.value = "z-index:-2;"; }
-    if (_arenaAdmin.posicaoBoneco === "desativado") { if (arena) arena.style.zIndex = "-3";   if (sel) sel.value = "z-index:-3;"; }
-}
-
-// Bonecos remotos — se o backend tiver lista, usa as URLs diretas
-const _bonemosAdmin = (typeof adminGetBonecos === "function") ? adminGetBonecos() : null;
-if (_bonemosAdmin && _bonemosAdmin.length > 0) {
-    BONECOS_REMOTE = _bonemosAdmin; // [{filename, url}, ...]
-}
+const USER_COOLDOWN = 15000; // 15s por usuário
+const GLOBAL_COOLDOWN = 5000; // 5s entre spawns globais
+const MAX_BONECOS = 30;
 
 /* ========================================== */
 
@@ -107,15 +111,13 @@ function spawnBoneco(username) {
     nome.classList.add("nome");
     nome.textContent = username
 
-    // Escolhe imagem aleatória — prefere bonecos do backend se disponíveis
+    // Escolhe imagem aleatória
+    const randomImg = BONECOS_LIST[
+        Math.floor(Math.random() * BONECOS_LIST.length)
+    ];
+
     const img = document.createElement("img");
-    if (BONECOS_REMOTE && BONECOS_REMOTE.length > 0) {
-        const randomRemote = BONECOS_REMOTE[Math.floor(Math.random() * BONECOS_REMOTE.length)];
-        img.src = randomRemote.url;
-    } else {
-        const randomLocal = BONECOS_LIST[Math.floor(Math.random() * BONECOS_LIST.length)];
-        img.src = BONECOS_PATH + randomLocal;
-    }
+    img.src = BONECOS_PATH + randomImg;
     img.alt = username;
 
     boneco.appendChild(img);
