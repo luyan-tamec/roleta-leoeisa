@@ -2,7 +2,7 @@
 // Carrega configs do backend e aplica na roleta SEM precisar de F5.
 // Usa SSE (Server-Sent Events) para receber atualizações em tempo real.
 
-const ADMIN_BACKEND_URL = "http://localhost:3001"; // ← troque pela URL do Render
+const ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com"; // ← troque pela URL do Render
 
 // ─── FETCH INICIAL ────────────────────────────────────────────────────────────
 async function syncAdmin() {
