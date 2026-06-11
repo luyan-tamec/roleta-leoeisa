@@ -39,6 +39,7 @@ function connectSSE() {
   sse.addEventListener("imagens",      e => { applyImagens(JSON.parse(e.data)); });
   sse.addEventListener("bonecos",      e => { sessionStorage.setItem("admin_bonecos", e.data); applyBonecos(JSON.parse(e.data)); });
   sse.addEventListener("arena_limpar", () => { limparArena(); });
+  sse.addEventListener("reload",       () => { location.reload(); });
 
   sse.onerror = () => { sse.close(); setTimeout(connectSSE, 5000); };
 }
