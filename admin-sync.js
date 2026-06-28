@@ -168,7 +168,33 @@ function applyBonecos(bonecos) {
 // Injeta os nomes importados via CSV direto no array nomes[] da roleta (script3.js)
 function applyParticipantes(lista) {
   lista = lista || adminGetParticipantes();
-  if (!lista || !lista.length) return;
+
+  // Lista vazia = limpar os participantes importados da roleta
+  if (!lista || !lista.length) {
+    if (typeof nomes === "undefined") return;
+    // Remove apenas os nomes que vieram do backend (guardados em sessionStorage)
+    const anteriores = adminGetParticipantes() || [];
+    if (!anteriores.length) return;
+    const setAnteriores = new Set(anteriores.map(n => n.toLowerCase()));
+    const novosNomes = [];
+    const novasCores = [];
+    for (let i = 0; i < nomes.length; i++) {
+      if (!setAnteriores.has(nomes[i].toLowerCase())) {
+        novosNomes.push(nomes[i]);
+        novasCores.push(cores[i]);
+      }
+    }
+    nomes.length = 0; novosNomes.forEach(n => nomes.push(n));
+    cores.length = 0; novasCores.forEach(c => cores.push(c));
+    sessionStorage.setItem("admin_participantes", JSON.stringify([]));
+    if (typeof salvar        === "function") salvar();
+    if (typeof gerarBuffer   === "function") gerarBuffer();
+    if (typeof desenhar      === "function") desenhar();
+    if (typeof atualizarCentro === "function") atualizarCentro();
+    if (typeof atualizar     === "function") atualizar();
+    console.log("[admin-sync] 🗑️ Participantes removidos da roleta.");
+    return;
+  }
 
   // nomes[] e cores[] são globais do script3.js
   if (typeof nomes === "undefined" || typeof cores === "undefined") return;
