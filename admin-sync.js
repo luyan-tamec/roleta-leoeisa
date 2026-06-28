@@ -42,11 +42,27 @@ function connectSSE() {
   sse.addEventListener("imagens",         e => { applyImagens(JSON.parse(e.data)); });
   sse.addEventListener("bonecos",         e => { sessionStorage.setItem("admin_bonecos",       e.data); applyBonecos(JSON.parse(e.data)); });
   sse.addEventListener("participantes",   e => {
-    // Guarda ANTES de atualizar o sessionStorage, para o applyParticipantes saber o que remover
-    const anterior = sessionStorage.getItem("admin_participantes");
-    sessionStorage.setItem("admin_participantes", anterior); // mantém o anterior temporariamente
-    applyParticipantes(JSON.parse(e.data));
-    sessionStorage.setItem("admin_participantes", e.data);  // atualiza depois
+    const lista = JSON.parse(e.data);
+    sessionStorage.setItem("admin_participantes", e.data);
+    if (lista.length === 0) {
+      // Limpa direto sem confirm() — zera os arrays globais e chama as funções do script3.js
+      if (typeof nomes !== "undefined") {
+        nomes.length = 0;
+        cores.length = 0;
+        // Remove do localStorage usando o mesmo PREFIX do script3.js
+        if (typeof PREFIX !== "undefined") {
+          localStorage.removeItem(PREFIX + "nomes");
+          localStorage.removeItem(PREFIX + "cores");
+        }
+        if (typeof gerarBuffer     === "function") gerarBuffer();
+        if (typeof desenhar        === "function") desenhar();
+        if (typeof atualizar       === "function") atualizar();
+        if (typeof atualizarCentro === "function") atualizarCentro();
+        console.log("[admin-sync] 🗑️ Roleta limpa pelo painel admin.");
+      }
+    } else {
+      applyParticipantes(lista);
+    }
   });
   sse.addEventListener("arena_limpar",    () => { limparArena(); });
   sse.addEventListener("reload",          () => { location.reload(); });
@@ -175,32 +191,7 @@ function applyBonecos(bonecos) {
 function applyParticipantes(lista) {
   lista = lista || adminGetParticipantes();
 
-  // Lista vazia = limpar os participantes importados da roleta
-  if (!lista || !lista.length) {
-    if (typeof nomes === "undefined") return;
-    // Pega os nomes anteriores direto do sessionStorage (ainda não foi sobrescrito)
-    const anteriores = JSON.parse(sessionStorage.getItem("admin_participantes") || "[]");
-    if (!anteriores.length) return;
-    const setAnteriores = new Set(anteriores.map(n => n.toLowerCase()));
-    const novosNomes = [];
-    const novasCores = [];
-    for (let i = 0; i < nomes.length; i++) {
-      if (!setAnteriores.has(nomes[i].toLowerCase())) {
-        novosNomes.push(nomes[i]);
-        novasCores.push(cores[i]);
-      }
-    }
-    nomes.length = 0; novosNomes.forEach(n => nomes.push(n));
-    cores.length = 0; novasCores.forEach(c => cores.push(c));
-    sessionStorage.setItem("admin_participantes", JSON.stringify([]));
-    if (typeof salvar        === "function") salvar();
-    if (typeof gerarBuffer   === "function") gerarBuffer();
-    if (typeof desenhar      === "function") desenhar();
-    if (typeof atualizarCentro === "function") atualizarCentro();
-    if (typeof atualizar     === "function") atualizar();
-    console.log("[admin-sync] 🗑️ Participantes removidos da roleta.");
-    return;
-  }
+  if (!lista || !lista.length) return;
 
   // nomes[] e cores[] são globais do script3.js
   if (typeof nomes === "undefined" || typeof cores === "undefined") return;
