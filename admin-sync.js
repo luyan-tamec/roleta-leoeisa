@@ -41,7 +41,13 @@ function connectSSE() {
   sse.addEventListener("visual",          e => { sessionStorage.setItem("admin_visual",        e.data); applyVisual(JSON.parse(e.data)); });
   sse.addEventListener("imagens",         e => { applyImagens(JSON.parse(e.data)); });
   sse.addEventListener("bonecos",         e => { sessionStorage.setItem("admin_bonecos",       e.data); applyBonecos(JSON.parse(e.data)); });
-  sse.addEventListener("participantes",   e => { sessionStorage.setItem("admin_participantes", e.data); applyParticipantes(JSON.parse(e.data)); });
+  sse.addEventListener("participantes",   e => {
+    // Guarda ANTES de atualizar o sessionStorage, para o applyParticipantes saber o que remover
+    const anterior = sessionStorage.getItem("admin_participantes");
+    sessionStorage.setItem("admin_participantes", anterior); // mantém o anterior temporariamente
+    applyParticipantes(JSON.parse(e.data));
+    sessionStorage.setItem("admin_participantes", e.data);  // atualiza depois
+  });
   sse.addEventListener("arena_limpar",    () => { limparArena(); });
   sse.addEventListener("reload",          () => { location.reload(); });
 
@@ -172,8 +178,8 @@ function applyParticipantes(lista) {
   // Lista vazia = limpar os participantes importados da roleta
   if (!lista || !lista.length) {
     if (typeof nomes === "undefined") return;
-    // Remove apenas os nomes que vieram do backend (guardados em sessionStorage)
-    const anteriores = adminGetParticipantes() || [];
+    // Pega os nomes anteriores direto do sessionStorage (ainda não foi sobrescrito)
+    const anteriores = JSON.parse(sessionStorage.getItem("admin_participantes") || "[]");
     if (!anteriores.length) return;
     const setAnteriores = new Set(anteriores.map(n => n.toLowerCase()));
     const novosNomes = [];
