@@ -1,4 +1,4 @@
-// admin-sync.js — v3
+// admin-sync.js — v4
 // Carrega configs do backend e aplica na roleta SEM precisar de F5.
 // SSE recebe updates em tempo real quando algo é salvo no painel.
 
@@ -7,21 +7,24 @@ const ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com"; // ← troque pel
 // ─── FETCH INICIAL ────────────────────────────────────────────────────────────
 async function syncAdmin() {
   try {
-    const [cfgRes, arenaRes, sonsRes, imgRes, visRes] = await Promise.all([
+    const [cfgRes, arenaRes, sonsRes, imgRes, visRes, partRes] = await Promise.all([
       fetch(`${ADMIN_BACKEND_URL}/api/config`),
       fetch(`${ADMIN_BACKEND_URL}/api/arena`),
       fetch(`${ADMIN_BACKEND_URL}/api/sons`),
       fetch(`${ADMIN_BACKEND_URL}/api/imagens/bonecos`),
       fetch(`${ADMIN_BACKEND_URL}/api/visual`),
+      fetch(`${ADMIN_BACKEND_URL}/api/participantes`),
     ]);
-    const [cfg, arena, sons, imgs, vis] = await Promise.all([
-      cfgRes.json(), arenaRes.json(), sonsRes.json(), imgRes.json(), visRes.json(),
+    const [cfg, arena, sons, imgs, vis, part] = await Promise.all([
+      cfgRes.json(), arenaRes.json(), sonsRes.json(),
+      imgRes.json(), visRes.json(), partRes.json(),
     ]);
-    if (cfg.ok)   sessionStorage.setItem("admin_config",  JSON.stringify(cfg.data));
-    if (arena.ok) sessionStorage.setItem("admin_arena",   JSON.stringify(arena.data));
-    if (sons.ok)  sessionStorage.setItem("admin_sons",    JSON.stringify(sons.data));
-    if (imgs.ok)  sessionStorage.setItem("admin_bonecos", JSON.stringify(imgs.data));
-    if (vis.ok)   sessionStorage.setItem("admin_visual",  JSON.stringify(vis.data));
+    if (cfg.ok)   sessionStorage.setItem("admin_config",        JSON.stringify(cfg.data));
+    if (arena.ok) sessionStorage.setItem("admin_arena",         JSON.stringify(arena.data));
+    if (sons.ok)  sessionStorage.setItem("admin_sons",          JSON.stringify(sons.data));
+    if (imgs.ok)  sessionStorage.setItem("admin_bonecos",       JSON.stringify(imgs.data));
+    if (vis.ok)   sessionStorage.setItem("admin_visual",        JSON.stringify(vis.data));
+    if (part.ok)  sessionStorage.setItem("admin_participantes", JSON.stringify(part.data));
     console.log("[admin-sync] ✅ Configs carregadas.");
   } catch (e) {
     console.warn("[admin-sync] ⚠️ Backend offline, usando configs locais.", e.message);
@@ -32,24 +35,26 @@ async function syncAdmin() {
 function connectSSE() {
   const sse = new EventSource(`${ADMIN_BACKEND_URL}/api/events`);
 
-  sse.addEventListener("config",       e => { sessionStorage.setItem("admin_config",  e.data); applyConfig(JSON.parse(e.data)); });
-  sse.addEventListener("sons",         e => { sessionStorage.setItem("admin_sons",    e.data); applySons(JSON.parse(e.data)); });
-  sse.addEventListener("arena",        e => { sessionStorage.setItem("admin_arena",   e.data); applyArena(JSON.parse(e.data)); });
-  sse.addEventListener("visual",       e => { sessionStorage.setItem("admin_visual",  e.data); applyVisual(JSON.parse(e.data)); });
-  sse.addEventListener("imagens",      e => { applyImagens(JSON.parse(e.data)); });
-  sse.addEventListener("bonecos",      e => { sessionStorage.setItem("admin_bonecos", e.data); applyBonecos(JSON.parse(e.data)); });
-  sse.addEventListener("arena_limpar", () => { limparArena(); });
-  sse.addEventListener("reload",       () => { location.reload(); });
+  sse.addEventListener("config",          e => { sessionStorage.setItem("admin_config",        e.data); applyConfig(JSON.parse(e.data)); });
+  sse.addEventListener("sons",            e => { sessionStorage.setItem("admin_sons",          e.data); applySons(JSON.parse(e.data)); });
+  sse.addEventListener("arena",           e => { sessionStorage.setItem("admin_arena",         e.data); applyArena(JSON.parse(e.data)); });
+  sse.addEventListener("visual",          e => { sessionStorage.setItem("admin_visual",        e.data); applyVisual(JSON.parse(e.data)); });
+  sse.addEventListener("imagens",         e => { applyImagens(JSON.parse(e.data)); });
+  sse.addEventListener("bonecos",         e => { sessionStorage.setItem("admin_bonecos",       e.data); applyBonecos(JSON.parse(e.data)); });
+  sse.addEventListener("participantes",   e => { sessionStorage.setItem("admin_participantes", e.data); applyParticipantes(JSON.parse(e.data)); });
+  sse.addEventListener("arena_limpar",    () => { limparArena(); });
+  sse.addEventListener("reload",          () => { location.reload(); });
 
   sse.onerror = () => { sse.close(); setTimeout(connectSSE, 5000); };
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-function adminGetConfig()  { return JSON.parse(sessionStorage.getItem("admin_config")  || "null"); }
-function adminGetArena()   { return JSON.parse(sessionStorage.getItem("admin_arena")   || "null"); }
-function adminGetSons()    { return JSON.parse(sessionStorage.getItem("admin_sons")    || "null"); }
-function adminGetBonecos() { return JSON.parse(sessionStorage.getItem("admin_bonecos") || "null"); }
-function adminGetVisual()  { return JSON.parse(sessionStorage.getItem("admin_visual")  || "null"); }
+function adminGetConfig()        { return JSON.parse(sessionStorage.getItem("admin_config")        || "null"); }
+function adminGetArena()         { return JSON.parse(sessionStorage.getItem("admin_arena")         || "null"); }
+function adminGetSons()          { return JSON.parse(sessionStorage.getItem("admin_sons")          || "null"); }
+function adminGetBonecos()       { return JSON.parse(sessionStorage.getItem("admin_bonecos")       || "null"); }
+function adminGetVisual()        { return JSON.parse(sessionStorage.getItem("admin_visual")        || "null"); }
+function adminGetParticipantes() { return JSON.parse(sessionStorage.getItem("admin_participantes") || "null"); }
 
 // ─── APPLY CONFIG ─────────────────────────────────────────────────────────────
 function applyConfig(cfg) {
@@ -111,16 +116,20 @@ function applySons(sons) {
 function applyArena(arena) {
   arena = arena || adminGetArena();
   if (!arena) return;
+  if (arena.userCooldown   != null && typeof USER_COOLDOWN    !== "undefined") window.USER_COOLDOWN    = arena.userCooldown;
+  if (arena.globalCooldown != null && typeof GLOBAL_COOLDOWN  !== "undefined") window.GLOBAL_COOLDOWN  = arena.globalCooldown;
+  if (arena.maxBonecos     != null && typeof MAX_BONECOS      !== "undefined") window.MAX_BONECOS      = arena.maxBonecos;
+  if (arena.comando        != null && typeof COMANDO_ENTRAR   !== "undefined") window.COMANDO_ENTRAR   = arena.comando;
+  if (arena.escala         != null && typeof ESCALA_BONECO    !== "undefined") window.ESCALA_BONECO    = arena.escala;
+  if (arena.velocidade     != null && typeof VEL_MULTIPLICADOR !== "undefined") window.VEL_MULTIPLICADOR = arena.velocidade;
+  if (arena.tempoVida      != null && typeof TEMPO_VIDA       !== "undefined") window.TEMPO_VIDA       = arena.tempoVida * 1000;
+  if (arena.animEntrada    != null && typeof ANIM_ENTRADA     !== "undefined") window.ANIM_ENTRADA     = arena.animEntrada;
+  if (arena.nomeCores      != null && typeof NOME_COR_MODO    !== "undefined") window.NOME_COR_MODO    = arena.nomeCores;
+  if (arena.nomeCorFixa    != null && typeof NOME_COR_FIXA    !== "undefined") window.NOME_COR_FIXA    = arena.nomeCorFixa;
+  if (arena.nomePaleta     != null && typeof NOME_PALETA      !== "undefined") window.NOME_PALETA      = arena.nomePaleta;
+  if (arena.nomeFonte      != null && typeof NOME_FONTE       !== "undefined") window.NOME_FONTE       = arena.nomeFonte;
+  if (arena.nomeTamanho    != null && typeof NOME_TAMANHO     !== "undefined") window.NOME_TAMANHO     = arena.nomeTamanho;
 
-  // Cooldowns / limites
-  if (arena.userCooldown   != null && typeof USER_COOLDOWN   !== "undefined") window.USER_COOLDOWN   = arena.userCooldown;
-  if (arena.globalCooldown != null && typeof GLOBAL_COOLDOWN !== "undefined") window.GLOBAL_COOLDOWN = arena.globalCooldown;
-  if (arena.maxBonecos     != null && typeof MAX_BONECOS     !== "undefined") window.MAX_BONECOS     = arena.maxBonecos;
-
-  // Comando
-  if (arena.comando != null && typeof COMANDO_ENTRAR !== "undefined") window.COMANDO_ENTRAR = arena.comando;
-
-  // Posição
   if (arena.posicaoBoneco) {
     const el = document.getElementById("arena");
     if (el) {
@@ -129,21 +138,6 @@ function applyArena(arena) {
       if (arena.posicaoBoneco === "desativado") el.style.zIndex = "-3";
     }
   }
-
-  // Visual dos bonecos
-  if (arena.escala     != null && typeof ESCALA_BONECO    !== "undefined") window.ESCALA_BONECO    = arena.escala;
-  if (arena.velocidade != null && typeof VEL_MULTIPLICADOR !== "undefined") window.VEL_MULTIPLICADOR = arena.velocidade;
-  if (arena.tempoVida  != null && typeof TEMPO_VIDA       !== "undefined") window.TEMPO_VIDA       = arena.tempoVida * 1000;
-  if (arena.animEntrada != null && typeof ANIM_ENTRADA    !== "undefined") window.ANIM_ENTRADA     = arena.animEntrada;
-
-  // Nomes
-  if (arena.nomeCores   != null && typeof NOME_COR_MODO !== "undefined") window.NOME_COR_MODO = arena.nomeCores;
-  if (arena.nomeCorFixa != null && typeof NOME_COR_FIXA !== "undefined") window.NOME_COR_FIXA = arena.nomeCorFixa;
-  if (arena.nomePaleta  != null && typeof NOME_PALETA   !== "undefined") window.NOME_PALETA   = arena.nomePaleta;
-  if (arena.nomeFonte   != null && typeof NOME_FONTE    !== "undefined") window.NOME_FONTE    = arena.nomeFonte;
-  if (arena.nomeTamanho != null && typeof NOME_TAMANHO  !== "undefined") window.NOME_TAMANHO  = arena.nomeTamanho;
-
-  // Modo teste
   if (typeof arena.modoTeste === "boolean" && typeof MODO_TESTE !== "undefined") {
     window.MODO_TESTE = arena.modoTeste;
     if (arena.testeIntervalo != null && typeof TESTE_INTERVALO !== "undefined")
@@ -152,12 +146,12 @@ function applyArena(arena) {
   }
 }
 
-// ─── APPLY VISUAL (fundo) ─────────────────────────────────────────────────────
+// ─── APPLY VISUAL ─────────────────────────────────────────────────────────────
 function applyVisual(vis) {
   vis = vis || adminGetVisual();
   if (!vis) return;
-  const blur    = vis.fundoBlur    ?? 2;
-  const brilho  = vis.fundoBrilho  ?? 0.6;
+  const blur   = vis.fundoBlur   ?? 2;
+  const brilho = vis.fundoBrilho ?? 0.6;
   _injectStyle("admin-visual-fundo",
     `body::before { filter: blur(${blur}px) brightness(${brilho}) !important; }`
   );
@@ -168,6 +162,49 @@ function applyBonecos(bonecos) {
   if (typeof BONECOS_REMOTE !== "undefined" && Array.isArray(bonecos)) {
     window.BONECOS_REMOTE = bonecos.length > 0 ? bonecos : null;
   }
+}
+
+// ─── APPLY PARTICIPANTES ──────────────────────────────────────────────────────
+// Injeta os nomes importados via CSV direto no array nomes[] da roleta (script3.js)
+function applyParticipantes(lista) {
+  lista = lista || adminGetParticipantes();
+  if (!lista || !lista.length) return;
+
+  // nomes[] e cores[] são globais do script3.js
+  if (typeof nomes === "undefined" || typeof cores === "undefined") return;
+
+  const modo = localStorage.getItem("r1_modoCor") ||
+               localStorage.getItem("roleta1_modoCor") || "colorido";
+
+  // Adiciona sem duplicatas
+  const existentes = new Set(nomes.map(n => n.toLowerCase()));
+  let adicionados = 0;
+  for (const nm of lista) {
+    if (!existentes.has(nm.toLowerCase())) {
+      nomes.push(nm);
+      if (typeof corAleatoria === "function" && modo === "colorido") {
+        cores.push(corAleatoria());
+      } else if (typeof paletaNeutra !== "undefined") {
+        cores.push(paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+      } else {
+        cores.push("#ffffff");
+      }
+      existentes.add(nm.toLowerCase());
+      adicionados++;
+    }
+  }
+
+  if (adicionados === 0) return;
+
+  // Redesenha a roleta com os novos nomes
+  if (typeof salvar        === "function") salvar();
+  if (typeof gerarBuffer   === "function") gerarBuffer();
+  if (typeof desenhar      === "function") desenhar();
+  if (typeof embaralhar    === "function") embaralhar();
+  if (typeof atualizarCentro === "function") atualizarCentro();
+  if (typeof atualizar     === "function") atualizar();
+
+  console.log(`[admin-sync] ✅ ${adicionados} participante(s) adicionado(s) à roleta.`);
 }
 
 // ─── LIMPAR ARENA ─────────────────────────────────────────────────────────────
@@ -232,7 +269,7 @@ function _atualizarModoteste() {
   _testeTimer = setInterval(() => {
     if (typeof handleJoin === "function") {
       const nome = NOMES_TESTE[Math.floor(Math.random() * NOMES_TESTE.length)] + "_" + Math.floor(Math.random()*99);
-      handleJoin(nome, true); // true = forçado (ignora cooldowns)
+      handleJoin(nome, true);
     }
   }, intervalo);
 }
@@ -245,6 +282,8 @@ syncAdmin().then(() => {
     applyArena();
     applyVisual();
     applyImagens();
+    // Participantes aplicados após a roleta carregar seus próprios dados
+    setTimeout(() => applyParticipantes(), 500);
     connectSSE();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply);
