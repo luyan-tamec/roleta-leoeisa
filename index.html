@@ -133,6 +133,7 @@
             <button class="musica" id="btnMusica">🎵 Tocar Música</button>
             <button id="btnFullscreen">🖥️ Tela Cheia</button>
             <button id="btnFilmes" style="background-color:#e87c00;color:#fff;">🎬 Importar Filmes</button>
+            <button id="btnVips" style="background-color:#9146ff;color:#fff;">⭐ VIPs</button>
             <button id="btnLimpar">🧹 Limpar Tudo</button>
 
             <div style="display:flex;align-items:center;gap:6px;">
@@ -209,6 +210,90 @@
   <script src="scrparena.js" defer></script>
   <script src="code-vote.js" defer></script>
   <script src="search.js" defer></script>
+
+<script>
+// ===== BOTÃO VIPs =====
+// Edite este array com os nomes VIPs do canal
+const LISTA_VIPS = [
+  "marcoschaefer_",
+  "ormundo",
+  "larissacristina1996",
+  "isa_millena",
+  "camaradantonio",
+  "pedraohcs",
+  "drex_d",
+  "yeshen_roza",
+  "rlukao",
+  "mazokagameplays",
+  "laisedonascimento",
+  "straiderbr",
+  "diegochueiri",
+  "somichn",
+  "wiill__wiill",
+  "garan_elderan",
+  "peppaviroubacon",
+  "mrnuggettss",
+  "matheus_llevi",
+  "rodrace05",
+  "jotinhhaa_",
+  "merizito",
+  "heugy",
+  "aleziiinho",
+  "gustavotchavo",
+  "gusta_roza",
+  "vitorivrest",
+  "dino_vsf",
+  "mrtziow",
+  "allyne_hater_do_leo",
+  "oi_mana_",
+  "daviviana2003",
+  "evertonxp0923",
+  "breakktv",
+  "soyaanna",
+  "frank_pimentel20",
+  "capivara__cansada",
+  "tomastigano1",
+  "vitorzm",
+  "alucardsf1",
+  "thiago_s3_",
+  "hat01",
+  "fabriciosilva910",
+  "matheus_targaryenn",
+  "sussanomon"
+];
+
+document.getElementById("btnVips").addEventListener("click", () => {
+  if (!LISTA_VIPS.length) {
+    alert("A lista de VIPs está vazia");
+    return;
+  }
+
+  const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+  let adicionados = 0;
+
+  for (const nm of LISTA_VIPS) {
+    const n = nm.trim();
+    if (!n) continue;
+    nomes.push(n);
+    if (modo === "colorido") {
+      cores.push(corAleatoria());
+    } else {
+      cores.push(paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+    }
+    adicionados++;
+  }
+
+  salvar();
+  gerarBuffer();
+  desenhar();
+  embaralhar();
+  atualizarCentro();
+  atualizar();
+
+  alert(`⭐ ${adicionados} VIP(s) adicionado(s) à roleta!`);
+});
+</script>
+
 </body>
 
 </html>
