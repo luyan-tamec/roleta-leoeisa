@@ -212,8 +212,8 @@
   <script src="search.js" defer></script>
 
 <script>
-// ===== BOTÃO VIPs =====
-// Edite este array com os nomes VIPs do canal
+// ===== MODAL VIPs =====
+// ↓↓ EDITE AQUI OS NOMES VIPs ↓↓
 const LISTA_VIPS = [
   "marcoschaefer_",
   "ormundo",
@@ -263,37 +263,160 @@ const LISTA_VIPS = [
   "erik_1910",
   "demon_173"
 ];
+// ↑↑ FIM DA LISTA ↑↑
 
-document.getElementById("btnVips").addEventListener("click", () => {
+function abrirModalVips() {
   if (!LISTA_VIPS.length) {
-    alert("A lista de VIPs está vazia");
+    alert("A lista de VIPs está vazia. Edite o array LISTA_VIPS no index.html.");
     return;
   }
 
-  const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
-  let adicionados = 0;
+  const overlay = document.createElement("div");
+  overlay.id = "modalVipsOverlay";
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.85);
+    z-index:9999;display:flex;align-items:center;justify-content:center;
+  `;
 
-  for (const nm of LISTA_VIPS) {
-    const n = nm.trim();
-    if (!n) continue;
-    nomes.push(n);
-    if (modo === "colorido") {
-      cores.push(corAleatoria());
-    } else {
-      cores.push(paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
-    }
-    adicionados++;
+  overlay.innerHTML = `
+    <div style="
+      background:#1a1a1a;border:2px solid #9146ff;border-radius:20px;
+      padding:24px;width:min(95vw,480px);max-height:85vh;
+      display:flex;flex-direction:column;gap:12px;
+    ">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 style="margin:0;color:#fff;font-size:1.1rem;">⭐ Adicionar VIPs à Roleta</h2>
+        <span id="vipContador" style="color:#9146ff;font-weight:700;font-size:13px;background:rgba(145,70,255,0.15);padding:4px 10px;border-radius:20px;">0 selecionados</span>
+      </div>
+
+      <input id="vipSearch" type="text" placeholder="Pesquisar VIP..." style="
+        flex:1;padding:8px 12px;border-radius:10px;border:none;
+        background:#333;color:#fff;font-size:13px;outline:none;
+      ">
+
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button id="vipSelecionarTodos" style="padding:6px 12px;border-radius:10px;background:#555;color:#fff;font-size:12px;border:none;cursor:pointer;">✅ Selecionar tudo</button>
+        <button id="vipDesmarcarTodos" style="padding:6px 12px;border-radius:10px;background:#555;color:#fff;font-size:12px;border:none;cursor:pointer;">❌ Desmarcar tudo</button>
+      </div>
+
+      <div id="vipListaScroll" style="
+        overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;
+        max-height:380px;padding-right:4px;
+      "></div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="vipCancelar" style="
+          padding:10px 18px;border-radius:12px;background:#444;
+          color:#fff;border:none;cursor:pointer;font-weight:700;
+        ">Cancelar</button>
+        <button id="vipConfirmar" style="
+          padding:10px 18px;border-radius:12px;background:#9146ff;
+          color:#fff;border:none;cursor:pointer;font-weight:700;
+        ">⭐ Adicionar à Roleta</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const lista        = document.getElementById("vipListaScroll");
+  const searchInput  = document.getElementById("vipSearch");
+  const contador     = document.getElementById("vipContador");
+  let selecionados   = new Set();
+
+  function atualizarContador() {
+    contador.textContent = selecionados.size + " selecionado" + (selecionados.size !== 1 ? "s" : "");
   }
 
-  salvar();
-  gerarBuffer();
-  desenhar();
-  embaralhar();
-  atualizarCentro();
-  atualizar();
+  function renderLista() {
+    const busca = searchInput.value.toLowerCase();
+    const filtrados = LISTA_VIPS.filter(n => n.toLowerCase().includes(busca));
+    lista.innerHTML = "";
 
-  alert(`⭐ ${adicionados} VIP(s) adicionado(s) à roleta!`);
-});
+    filtrados.forEach(nome => {
+      const marcado = selecionados.has(nome);
+      const item = document.createElement("div");
+      item.style.cssText = `
+        display:flex;align-items:center;gap:10px;padding:10px 14px;
+        border-radius:10px;cursor:pointer;
+        background:${marcado ? "rgba(145,70,255,0.25)" : "rgba(255,255,255,0.05)"};
+        border:1px solid ${marcado ? "#9146ff" : "transparent"};
+        transition:background 0.15s;
+      `;
+
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.checked = marcado;
+      check.style.cssText = "accent-color:#9146ff;width:16px;height:16px;cursor:pointer;flex-shrink:0;";
+
+      const label = document.createElement("span");
+      label.style.cssText = "color:#fff;font-size:14px;flex:1;font-weight:500;";
+      label.textContent = nome;
+
+      const badge = document.createElement("span");
+      badge.style.cssText = "color:#9146ff;font-size:11px;font-weight:700;background:rgba(145,70,255,0.15);padding:2px 8px;border-radius:20px;";
+      badge.textContent = "VIP";
+
+      item.appendChild(check);
+      item.appendChild(label);
+      item.appendChild(badge);
+
+      item.addEventListener("click", () => {
+        if (selecionados.has(nome)) selecionados.delete(nome);
+        else selecionados.add(nome);
+        atualizarContador();
+        renderLista();
+      });
+
+      lista.appendChild(item);
+    });
+  }
+
+  renderLista();
+  atualizarContador();
+  searchInput.addEventListener("input", renderLista);
+
+  document.getElementById("vipSelecionarTodos").onclick = () => {
+    const busca = searchInput.value.toLowerCase();
+    LISTA_VIPS.filter(n => n.toLowerCase().includes(busca)).forEach(n => selecionados.add(n));
+    atualizarContador();
+    renderLista();
+  };
+
+  document.getElementById("vipDesmarcarTodos").onclick = () => {
+    selecionados.clear();
+    atualizarContador();
+    renderLista();
+  };
+
+  document.getElementById("vipConfirmar").onclick = () => {
+    const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+    const paraAdicionar = selecionados.size > 0 ? [...selecionados] : [...LISTA_VIPS];
+
+    for (const nm of paraAdicionar) {
+      nomes.push(nm);
+      if (modo === "colorido") {
+        cores.push(corAleatoria());
+      } else {
+        cores.push(paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+      }
+    }
+
+    salvar();
+    gerarBuffer();
+    desenhar();
+    embaralhar();
+    atualizarCentro();
+    atualizar();
+    document.body.removeChild(overlay);
+    alert(`⭐ ${paraAdicionar.length} VIP(s) adicionado(s) à roleta!`);
+  };
+
+  document.getElementById("vipCancelar").onclick = () => document.body.removeChild(overlay);
+  overlay.addEventListener("click", e => { if (e.target === overlay) document.body.removeChild(overlay); });
+}
+
+document.getElementById("btnVips").addEventListener("click", abrirModalVips);
 </script>
 
 </body>
