@@ -322,7 +322,8 @@ function abrirModalVips() {
   const lista        = document.getElementById("vipListaScroll");
   const searchInput  = document.getElementById("vipSearch");
   const contador     = document.getElementById("vipContador");
-  let selecionados   = new Set();
+  let selecionados = new Set();
+  let qtdPorVip    = {}; // nome -> quantidade de tickets
 
   function atualizarContador() {
     contador.textContent = selecionados.size + " selecionado" + (selecionados.size !== 1 ? "s" : "");
@@ -354,12 +355,42 @@ function abrirModalVips() {
       label.textContent = nome;
 
       const badge = document.createElement("span");
-      badge.style.cssText = "color:#9146ff;font-size:11px;font-weight:700;background:rgba(145,70,255,0.15);padding:2px 8px;border-radius:20px;";
+      badge.style.cssText = "color:#9146ff;font-size:11px;font-weight:700;background:rgba(145,70,255,0.15);padding:2px 8px;border-radius:20px;flex-shrink:0;";
       badge.textContent = "VIP";
+
+      // Controle de quantidade
+      const controle = document.createElement("div");
+      controle.style.cssText = "display:flex;align-items:center;gap:4px;flex-shrink:0;";
+      controle.innerHTML = `
+        <button class="vip-preset" data-v="1"  style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">+1</button>
+        <button class="vip-preset" data-v="5"  style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">+5</button>
+        <button class="vip-preset" data-v="10" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">+10</button>
+        <input class="vip-qtd" type="number" min="1" value="${qtdPorVip[nome] || 1}" style="
+          width:46px;padding:3px 6px;border-radius:8px;border:1px solid #9146ff;
+          background:#222;color:#9146ff;font-size:12px;font-weight:700;text-align:center;
+        ">
+      `;
+
+      controle.querySelectorAll(".vip-preset").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          const input = controle.querySelector(".vip-qtd");
+          const atual = parseInt(input.value) || 1;
+          input.value = atual + parseInt(btn.dataset.v);
+          qtdPorVip[nome] = parseInt(input.value);
+        });
+      });
+      controle.querySelector(".vip-qtd").addEventListener("click", e => e.stopPropagation());
+      controle.querySelector(".vip-qtd").addEventListener("input", e => {
+        const v = Math.max(1, parseInt(e.target.value) || 1);
+        qtdPorVip[nome] = v;
+        e.target.value = v;
+      });
 
       item.appendChild(check);
       item.appendChild(label);
       item.appendChild(badge);
+      item.appendChild(controle);
 
       item.addEventListener("click", () => {
         if (selecionados.has(nome)) selecionados.delete(nome);
@@ -392,14 +423,19 @@ function abrirModalVips() {
   document.getElementById("vipConfirmar").onclick = () => {
     const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
     const paraAdicionar = selecionados.size > 0 ? [...selecionados] : [...LISTA_VIPS];
+    let totalTickets = 0;
 
     for (const nm of paraAdicionar) {
-      nomes.push(nm);
-      if (modo === "colorido") {
-        cores.push(corAleatoria());
-      } else {
-        cores.push(paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+      const vezes = Math.max(1, parseInt(qtdPorVip[nm]) || 1);
+      for (let i = 0; i < vezes; i++) {
+        nomes.push(nm);
+        if (modo === "colorido") {
+          cores.push(corAleatoria());
+        } else {
+          cores.push(paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+        }
       }
+      totalTickets += vezes;
     }
 
     salvar();
@@ -409,7 +445,7 @@ function abrirModalVips() {
     atualizarCentro();
     atualizar();
     document.body.removeChild(overlay);
-    alert(`⭐ ${paraAdicionar.length} VIP(s) adicionado(s) à roleta!`);
+    alert(`⭐ ${paraAdicionar.length} VIP(s) adicionado(s) com ${totalTickets} ticket(s) no total!`);
   };
 
   document.getElementById("vipCancelar").onclick = () => document.body.removeChild(overlay);
