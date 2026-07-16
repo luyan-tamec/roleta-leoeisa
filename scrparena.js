@@ -40,9 +40,10 @@ if (_bonemosAdmin && _bonemosAdmin.length > 0) {
 }
 
 // URL do backend admin (definida no admin-sync.js)
-const ADMIN_BACKEND_URL = (typeof window.ADMIN_BACKEND_URL !== "undefined")
-    ? window.ADMIN_BACKEND_URL
-    : "https://roleta-admin.onrender.com";
+// Usamos window para evitar conflito de redeclaração
+if (typeof window.ADMIN_BACKEND_URL === "undefined") {
+    window.ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com";
+}
 
 // Modo de imagem dos bonecos
 let MODO_IMAGEM      = _arenaAdmin?.modoImagem     ?? "boneco"; // "boneco" | "perfil" | "aleatorio"
@@ -52,8 +53,8 @@ let TWITCH_CLIENT_ID = _arenaAdmin?.twitchClientId ?? "x4qevszaoxnscv462g6913dzo
 const _perfilCache = new Map();
 
 // URL do backend — lida pelo admin-sync
-const _backendUrl = (typeof ADMIN_BACKEND_URL !== "undefined")
-    ? ADMIN_BACKEND_URL
+const _backendUrl = (typeof window.ADMIN_BACKEND_URL !== "undefined")
+    ? window.ADMIN_BACKEND_URL
     : "https://roleta-admin.onrender.com";
 
 async function buscarFotoPerfil(username) {
@@ -105,7 +106,8 @@ client.connect();
 client.on("message", (channel, tags, message, self) => {
     if (self) return;
 
-    if (message.trim().toLowerCase() === "!entrar") {
+    const cmd = (typeof COMANDO_ENTRAR !== "undefined" ? COMANDO_ENTRAR : "!entrar").toLowerCase();
+    if (message.trim().toLowerCase() === cmd) {
         handleJoin(tags["display-name"]);
     }
 });
