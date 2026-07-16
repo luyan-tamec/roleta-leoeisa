@@ -39,6 +39,11 @@ if (_bonemosAdmin && _bonemosAdmin.length > 0) {
     BONECOS_REMOTE = _bonemosAdmin; // [{filename, url}, ...]
 }
 
+// URL do backend admin (definida no admin-sync.js)
+const ADMIN_BACKEND_URL = (typeof window.ADMIN_BACKEND_URL !== "undefined")
+    ? window.ADMIN_BACKEND_URL
+    : "https://roleta-admin.onrender.com";
+
 // Modo de imagem dos bonecos
 let MODO_IMAGEM      = _arenaAdmin?.modoImagem     ?? "boneco"; // "boneco" | "perfil" | "aleatorio"
 let TWITCH_CLIENT_ID = _arenaAdmin?.twitchClientId ?? "x4qevszaoxnscv462g6913dzo3m71t";
@@ -46,15 +51,18 @@ let TWITCH_CLIENT_ID = _arenaAdmin?.twitchClientId ?? "x4qevszaoxnscv462g6913dzo
 // Cache de fotos de perfil para não repetir requests
 const _perfilCache = new Map();
 
+// URL do backend — lida pelo admin-sync
+const _backendUrl = (typeof ADMIN_BACKEND_URL !== "undefined")
+    ? ADMIN_BACKEND_URL
+    : "https://roleta-admin.onrender.com";
+
 async function buscarFotoPerfil(username) {
     if (_perfilCache.has(username)) return _perfilCache.get(username);
     try {
-        const res = await fetch(
-            `https://api.twitch.tv/helix/users?login=${encodeURIComponent(username)}`,
-            { headers: { "Client-ID": TWITCH_CLIENT_ID } }
-        );
+        // Usa o proxy do backend — não expõe o Client Secret no frontend
+        const res  = await fetch(`${_backendUrl}/api/twitch/perfil?login=${encodeURIComponent(username)}`);
         const json = await res.json();
-        const url = json?.data?.[0]?.profile_image_url || null;
+        const url  = json?.data?.[0]?.profile_image_url || null;
         _perfilCache.set(username, url);
         return url;
     } catch (e) {
