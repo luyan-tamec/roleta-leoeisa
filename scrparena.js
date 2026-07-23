@@ -28,31 +28,7 @@ let BONECOS_LIST = [
   "image024.png",
   "image025.png",
   "image026.png",
-  "image027.png",
-  "image028.png",
-  "image029.png",
-  "image030.png",
-  "image031.png",
-  "image032.png",
-  "image033.png",
-  "image034.png",
-  "image035.png",
-  "image036.png",
-  "image037.png",
-  "image038.png",
-  "image039.png",
-  "image040.png",
-  "image041.png",
-  "image042.png",
-  "image043.png",
-  "image044.png",
-  "image045.png",
-  "image046.png",
-  "image047.png",
-  "image048.png",
-  "image049.png",
-  "image050.png",
-  "image051.png"
+  "image027.png"
 ];
 let BONECOS_REMOTE = null;
 
