@@ -28,7 +28,14 @@ let BONECOS_LIST = [
   "image024.png",
   "image025.png",
   "image026.png",
-  "image027.png"
+  "image027.png",
+  "image028.png",
+  "image029.png",
+  "image030.png",
+  "image031.png",
+  "image032.png",
+  "image033.png",
+  "image034.png"
 ];
 let BONECOS_REMOTE = null;
 
