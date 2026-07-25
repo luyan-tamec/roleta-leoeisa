@@ -2,6 +2,7 @@
 
 const BONECOS_PATH = "bonecos/";
 let BONECOS_LIST = [
+  "image000.png",
   "image001.png",
   "image002.png",
   "image003.png",
