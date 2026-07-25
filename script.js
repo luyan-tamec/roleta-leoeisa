@@ -109,7 +109,9 @@ const musicas = [
   "musicas/musica15.mp3",
   "musicas/musica16.mp3",
   "musicas/musica17.mp3",
-  "musicas/musica18.mp3"
+  "musicas/musica18.mp3",
+  "musicas/musica19.mp3",
+  "musicas/musica20.mp3"
 ];
 
 const musica = new Audio();
