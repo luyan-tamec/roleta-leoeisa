@@ -185,6 +185,85 @@ document.getElementById('btnExportar').onclick = () => {
   URL.revokeObjectURL(url);
 };
 
+// ─── IMPORTAR TXT (formato "Nome,quantidade") ─────────────────────────────────
+const inputTXT = document.getElementById('inputTXT');
+
+document.getElementById('btnImportarTxt').onclick = () => inputTXT.click();
+
+inputTXT.addEventListener('change', () => {
+  const f = inputTXT.files[0];
+  if (!f) return;
+  const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const linhas = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+
+    let totalAdicionados = 0;
+    let linhasInvalidas = 0;
+
+    for (const linha of linhas) {
+      const partes = linha.split(',');
+      const nomeTxt = (partes[0] || '').trim();
+      if (!nomeTxt) { linhasInvalidas++; continue; }
+
+      // Quantidade é opcional: "Carlos" sozinho conta como 1
+      let qtdTxt = parseInt((partes[1] || '1').trim());
+      if (isNaN(qtdTxt) || qtdTxt < 1) qtdTxt = 1;
+
+      for (let i = 0; i < qtdTxt; i++) {
+        nomes.push(nomeTxt);
+        if (modo === "colorido") {
+          cores.push(corAleatoria());
+        } else {
+          cores.push(paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+        }
+      }
+      totalAdicionados += qtdTxt;
+    }
+
+    if (!totalAdicionados) {
+      alert('Nenhum nome válido encontrado no arquivo. Use o formato: Nome,quantidade (ex: Carlos,5)');
+      inputTXT.value = '';
+      return;
+    }
+
+    salvar();
+    gerarBuffer();
+    desenhar();
+    atualizar();
+    atualizarCentro();
+    inputTXT.value = '';
+
+    let msg = `🎉 Importados ${totalAdicionados} nomes do arquivo TXT.`;
+    if (linhasInvalidas) msg += `\n⚠️ ${linhasInvalidas} linha(s) ignorada(s) por estarem vazias/inválidas.`;
+    alert(msg);
+  };
+  reader.readAsText(f);
+});
+
+// ─── EXPORTAR TXT (formato "Nome,quantidade") ─────────────────────────────────
+document.getElementById('btnExportarTxt').onclick = () => {
+  if (!nomes.length) {
+    alert('Nenhum nome para exportar.');
+    return;
+  }
+  // Agrupa contando quantas vezes cada nome aparece, preservando a ordem de 1ª aparição
+  const contagem = new Map();
+  for (const n of nomes) {
+    contagem.set(n, (contagem.get(n) || 0) + 1);
+  }
+  const linhas = Array.from(contagem.entries()).map(([nome, qtd]) => `${nome},${qtd}`);
+  const txt = linhas.join('\n');
+  const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "nomes_roleta.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 document.getElementById('btnAdicionar').onclick = adicionar;
 document.getElementById('btnEmbaralhar').onclick = embaralhar;
 document.getElementById('btnIniciar').onclick = girar;
