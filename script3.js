@@ -318,14 +318,6 @@ async function abrirModalFilmes() {
       "></div>
 
       <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button id="btnImportarTxt" style="
-          padding:8px 14px;border-radius:10px;background:#444;
-          color:#fff;font-size:12px;border:none;cursor:pointer;
-        ">📥 Importar TXT</button>
-        <button id="btnExportarTxt" style="
-          padding:8px 14px;border-radius:10px;background:#444;
-          color:#fff;font-size:12px;border:none;cursor:pointer;
-        ">📤 Exportar TXT</button>
         <button id="btnCancelarFilmes" style="
           padding:10px 18px;border-radius:12px;background:#444;
           color:#fff;border:none;cursor:pointer;font-weight:700;
@@ -662,4 +654,73 @@ document.getElementById("btnExportarTxt").addEventListener("click", () => {
   a.download = `roleta-filmes-${new Date().toISOString().slice(0, 10)}.txt`;
   a.click();
   URL.revokeObjectURL(url);
+});
+
+
+// ===== IMPORTAR/EXPORTAR TXT - PAINEL PRINCIPAL =====
+
+document.getElementById("btnImportarTxt").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".txt";
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const linhas = event.target.result.split("\n").filter(l => l.trim());
+      let adicionados = 0;
+      const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+
+      for (const linha of linhas) {
+        const partes = linha.split(",");
+        if (partes.length < 2) continue;
+        const nomeFilme = partes[0].trim();
+        const qtdStr = partes[1].trim();
+        if (!nomeFilme) continue;
+        const qtd = Math.max(1, parseInt(qtdStr) || 1);
+
+        for (let i = 0; i < qtd; i++) {
+          nomes.push(nomeFilme);
+          cores.push(modo === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+        }
+        adicionados++;
+      }
+
+      salvar();
+      gerarBuffer();
+      desenhar();
+      embaralhar();
+      atualizarCentro();
+      atualizar();
+      alert(`✅ ${adicionados} filme(s) importado(s)!`);
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+
+document.getElementById("btnExportarTxt").addEventListener("click", () => {
+  if (nomes.length === 0) {
+    alert("Nenhum filme na roleta para exportar!");
+    return;
+  }
+
+  const contagem = {};
+  for (const nome of nomes) {
+    contagem[nome] = (contagem[nome] || 0) + 1;
+  }
+
+  let conteudo = "";
+  for (const [filme, qtd] of Object.entries(contagem)) {
+    conteudo += `${filme},${qtd}\n`;
+  }
+
+  const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `roleta-filmes-${new Date().toISOString().slice(0, 10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert("✅ Arquivo exportado!");
 });
