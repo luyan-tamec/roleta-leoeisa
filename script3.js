@@ -624,103 +624,78 @@ document.getElementById("btnImportarTxt").addEventListener("click", () => {
 
       salvar();
       gerarBuffer();
-      desenhar();
-      embaralhar();
-      atualizarCentro();
-      atualizar();
-      document.body.removeChild(overlay);
-      alert(`✅ ${adicionados} filme(s) importado(s)!`);
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-});
 
-document.getElementById("btnExportarTxt").addEventListener("click", () => {
-  const contagem = {};
-  for (const nome of nomes) {
-    contagem[nome] = (contagem[nome] || 0) + 1;
+setTimeout(() => {
+  const btnImportar = document.getElementById("btnImportarTxt");
+  const btnExportar = document.getElementById("btnExportarTxt");
+
+  if (btnImportar) {
+    btnImportar.addEventListener("click", () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".txt";
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const linhas = event.target.result.split("\n").filter(l => l.trim());
+          let adicionados = 0;
+          const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+
+          for (const linha of linhas) {
+            const partes = linha.split(",");
+            if (partes.length < 2) continue;
+            const nomeFilme = partes[0].trim();
+            const qtdStr = partes[1].trim();
+            if (!nomeFilme) continue;
+            const qtd = Math.max(1, parseInt(qtdStr) || 1);
+
+            for (let i = 0; i < qtd; i++) {
+              nomes.push(nomeFilme);
+              cores.push(modo === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+            }
+            adicionados++;
+          }
+
+          salvar();
+          gerarBuffer();
+          desenhar();
+          embaralhar();
+          atualizarCentro();
+          atualizar();
+          alert(`✅ ${adicionados} filme(s) importado(s)!`);
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    });
   }
 
-  let conteudo = "";
-  for (const [filme, qtd] of Object.entries(contagem)) {
-    conteudo += `${filme},${qtd}\n`;
-  }
-
-  const blob = new Blob([conteudo], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `roleta-filmes-${new Date().toISOString().slice(0, 10)}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-
-// ===== IMPORTAR/EXPORTAR TXT - PAINEL PRINCIPAL =====
-
-document.getElementById("btnImportarTxt").addEventListener("click", () => {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".txt";
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const linhas = event.target.result.split("\n").filter(l => l.trim());
-      let adicionados = 0;
-      const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
-
-      for (const linha of linhas) {
-        const partes = linha.split(",");
-        if (partes.length < 2) continue;
-        const nomeFilme = partes[0].trim();
-        const qtdStr = partes[1].trim();
-        if (!nomeFilme) continue;
-        const qtd = Math.max(1, parseInt(qtdStr) || 1);
-
-        for (let i = 0; i < qtd; i++) {
-          nomes.push(nomeFilme);
-          cores.push(modo === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
-        }
-        adicionados++;
+  if (btnExportar) {
+    btnExportar.addEventListener("click", () => {
+      if (nomes.length === 0) {
+        alert("Nenhum filme na roleta para exportar!");
+        return;
       }
 
-      salvar();
-      gerarBuffer();
-      desenhar();
-      embaralhar();
-      atualizarCentro();
-      atualizar();
-      alert(`✅ ${adicionados} filme(s) importado(s)!`);
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-});
+      const contagem = {};
+      for (const nome of nomes) {
+        contagem[nome] = (contagem[nome] || 0) + 1;
+      }
 
-document.getElementById("btnExportarTxt").addEventListener("click", () => {
-  if (nomes.length === 0) {
-    alert("Nenhum filme na roleta para exportar!");
-    return;
+      let conteudo = "";
+      for (const [filme, qtd] of Object.entries(contagem)) {
+        conteudo += `${filme},${qtd}\n`;
+      }
+
+      const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `roleta-filmes-${new Date().toISOString().slice(0, 10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      alert("✅ Arquivo exportado!");
+    });
   }
-
-  const contagem = {};
-  for (const nome of nomes) {
-    contagem[nome] = (contagem[nome] || 0) + 1;
-  }
-
-  let conteudo = "";
-  for (const [filme, qtd] of Object.entries(contagem)) {
-    conteudo += `${filme},${qtd}\n`;
-  }
-
-  const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `roleta-filmes-${new Date().toISOString().slice(0, 10)}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
-  alert("✅ Arquivo exportado!");
-});
+}, 500);
