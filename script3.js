@@ -312,44 +312,6 @@ async function abrirModalFilmes() {
         ">❌ Desmarcar tudo</button>
       </div>
 
-      <div id="painelVotos" style="
-        background:rgba(209,8,172,0.1);border:1px solid #d108ac55;
-        border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;
-      ">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="color:#fff;font-size:13px;font-weight:700;">🗳️ Tickets por votos</span>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-            <input type="checkbox" id="checkVotos" style="accent-color:#d108ac;width:16px;height:16px;">
-            <span style="color:#ccc;font-size:12px;">Ativar</span>
-          </label>
-        </div>
-        <div id="configVotos" style="display:none;flex-wrap:wrap;gap:8px;align-items:center;">
-          <span style="color:#ccc;font-size:12px;">A cada</span>
-          <input id="votosBase" type="number" min="1" value="50" style="
-            width:60px;padding:4px 8px;border-radius:8px;border:none;
-            background:#333;color:#fff;font-size:13px;text-align:center;
-          ">
-          <span style="color:#ccc;font-size:12px;">votos =</span>
-          <input id="ticketsPorVotos" type="number" min="1" value="1" style="
-            width:50px;padding:4px 8px;border-radius:8px;border:none;
-            background:#333;color:#fff;font-size:13px;text-align:center;
-          ">
-          <span style="color:#ccc;font-size:12px;">ticket(s) · mínimo</span>
-          <input id="ticketsMin" type="number" min="1" value="1" style="
-            width:50px;padding:4px 8px;border-radius:8px;border:none;
-            background:#333;color:#fff;font-size:13px;text-align:center;
-          ">
-          <span style="color:#ccc;font-size:12px;">· máximo</span>
-          <input id="ticketsMax" type="number" min="1" value="20" style="
-            width:50px;padding:4px 8px;border-radius:8px;border:none;
-            background:#333;color:#fff;font-size:13px;text-align:center;
-          ">
-          <span style="color:#d108ac;font-size:11px;width:100%;">
-            Ex: 304 votos ÷ 50 = 6 tickets
-          </span>
-        </div>
-      </div>
-
       <div id="filmeListaScroll" style="
         overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;
         max-height:340px;padding-right:4px;
@@ -392,7 +354,7 @@ async function abrirModalFilmes() {
 
     lista.innerHTML = "";
     filtrados.forEach(f => {
-      if (qtdPorFilme[f.id] === undefined) qtdPorFilme[f.id] = 0;
+      if (!qtdPorFilme[f.id]) qtdPorFilme[f.id] = 1;
       const marcado = selecionados.has(f.id);
       const item = document.createElement("div");
       item.style.cssText = `
@@ -434,7 +396,7 @@ async function abrirModalFilmes() {
         <button class="btn-preset" data-v="1"  style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">1x</button>
         <button class="btn-preset" data-v="10" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">10x</button>
         <button class="btn-preset" data-v="20" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">20x</button>
-        <input class="qtd-custom" type="number" min="1" value="${qtdPorFilme[f.id]}" style="
+        <input class="qtd-custom" type="number" min="1" value="0" style="
           width:46px;padding:3px 6px;border-radius:8px;border:1px solid #d108ac;
           background:#222;color:#d108ac;font-size:12px;font-weight:700;text-align:center;
         ">
@@ -486,42 +448,6 @@ async function abrirModalFilmes() {
   searchInput.addEventListener("input", renderLista);
   categoriaSelect.addEventListener("change", renderLista);
 
-  // Toggle painel de votos
-  const checkVotos = document.getElementById("checkVotos");
-  const configVotos = document.getElementById("configVotos");
-
-  // Restaura estado salvo
-  const votosSalvo = localStorage.getItem(PREFIX + "ticketsVotos");
-  if (votosSalvo) {
-    const cfg = JSON.parse(votosSalvo);
-    checkVotos.checked = cfg.ativo || false;
-    document.getElementById("votosBase").value = cfg.base || 50;
-    document.getElementById("ticketsPorVotos").value = cfg.tickets || 1;
-    document.getElementById("ticketsMin").value = cfg.min || 1;
-    document.getElementById("ticketsMax").value = cfg.max || 20;
-    if (cfg.ativo) configVotos.style.display = "flex";
-  }
-
-  checkVotos.addEventListener("change", () => {
-    configVotos.style.display = checkVotos.checked ? "flex" : "none";
-  });
-
-  // Atualiza preview ao mudar configs
-  function atualizarPreview() {
-    const base = parseInt(document.getElementById("votosBase").value) || 50;
-    const tickets = parseInt(document.getElementById("ticketsPorVotos").value) || 1;
-    const min = parseInt(document.getElementById("ticketsMin").value) || 1;
-    const max = parseInt(document.getElementById("ticketsMax").value) || 20;
-    const exemplo = filmes[0]?.voteCount || 100;
-    const calc = Math.min(max, Math.max(min, Math.floor(exemplo / base) * tickets));
-    const preview = document.querySelector("#painelVotos span[style*='d108ac']");
-    if (preview) preview.textContent = `Ex: ${exemplo} votos ÷ ${base} × ${tickets} = ${calc} ticket(s)`;
-  }
-  ["votosBase","ticketsPorVotos","ticketsMin","ticketsMax"].forEach(id => {
-    document.getElementById(id).addEventListener("input", atualizarPreview);
-  });
-  atualizarPreview();
-
   document.getElementById("btnSelecionarTodos").onclick = () => {
     const busca = searchInput.value.toLowerCase();
     const cat = categoriaSelect.value;
@@ -539,21 +465,11 @@ async function abrirModalFilmes() {
 
   document.getElementById("btnConfirmarFilmes").onclick = () => {
     const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
-    const votosAtivo = document.getElementById("checkVotos").checked;
-    const base = parseInt(document.getElementById("votosBase").value) || 50;
-    const tickets = parseInt(document.getElementById("ticketsPorVotos").value) || 1;
-    const minTickets = parseInt(document.getElementById("ticketsMin").value) || 1;
-    const maxTickets = parseInt(document.getElementById("ticketsMax").value) || 20;
-
-    // Salva config de votos
-    localStorage.setItem(PREFIX + "ticketsVotos", JSON.stringify({
-      ativo: votosAtivo, base, tickets, min: minTickets, max: maxTickets
-    }));
-
     let fonte = selecionados.size > 0
       ? filmes.filter(f => selecionados.has(f.id))
       : filmes;
 
+    // Se nenhum selecionado, pega quantidade aleatória
     if (selecionados.size === 0) {
       const qtd = Math.min(parseInt(qtdInput.value) || 5, fonte.length);
       fonte = [...fonte].slice(0, qtd);
@@ -561,12 +477,7 @@ async function abrirModalFilmes() {
 
     let adicionados = 0;
     for (const f of fonte) {
-      let vezes;
-      if (votosAtivo) {
-        vezes = Math.min(maxTickets, Math.max(minTickets, Math.floor((f.voteCount || 0) / base) * tickets));
-      } else {
-        vezes = qtdPorFilme[f.id] || 1;
-      }
+      const vezes = qtdPorFilme[f.id] || 1;
       for (let i = 0; i < vezes; i++) {
         nomes.push(f.title);
         cores.push(modo === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
@@ -581,7 +492,7 @@ async function abrirModalFilmes() {
     atualizarCentro();
     atualizar();
     document.body.removeChild(overlay);
-    alert(`✅ ${adicionados} filme(s) adicionado(s)${votosAtivo ? " (tickets por votos)" : ""}!`);
+    alert(`✅ ${adicionados} filme(s) adicionado(s)!`);
   };
 
   document.getElementById("btnCancelarFilmes").onclick = () => {
@@ -684,3 +595,107 @@ function abrirModalTemas() {
   }
   document.getElementById("btnTema").addEventListener("click", abrirModalTemas);
 })();
+
+// ===== IMPORTAR/EXPORTAR TXT =====
+
+document.getElementById("btnImportarTxt").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".txt";
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const linhas = event.target.result.split("\n").filter(l => l.trim());
+      let adicionados = 0;
+      const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+
+      for (const linha of linhas) {
+        const [nomeFilme, qtdStr] = linha.split(",").map(s => s.trim());
+        if (!nomeFilme) continue;
+        const qtd = parseInt(qtdStr) || 1;
+
+        for (let i = 0; i < qtd; i++) {
+          nomes.push(nomeFilme);
+          cores.push(modo === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+        }
+        adicionados++;
+      }
+
+      salvar();
+      gerarBuffer();
+
+setTimeout(() => {
+  const btnImportar = document.getElementById("btnImportarTxt");
+  const btnExportar = document.getElementById("btnExportarTxt");
+
+  if (btnImportar) {
+    btnImportar.addEventListener("click", () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".txt";
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const linhas = event.target.result.split("\n").filter(l => l.trim());
+          let adicionados = 0;
+          const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+
+          for (const linha of linhas) {
+            const partes = linha.split(",");
+            if (partes.length < 2) continue;
+            const nomeFilme = partes[0].trim();
+            const qtdStr = partes[1].trim();
+            if (!nomeFilme) continue;
+            const qtd = Math.max(1, parseInt(qtdStr) || 1);
+
+            for (let i = 0; i < qtd; i++) {
+              nomes.push(nomeFilme);
+              cores.push(modo === "colorido" ? corAleatoria() : paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+            }
+            adicionados++;
+          }
+
+          salvar();
+          gerarBuffer();
+          desenhar();
+          embaralhar();
+          atualizarCentro();
+          atualizar();
+          alert(`✅ ${adicionados} filme(s) importado(s)!`);
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    });
+  }
+
+  if (btnExportar) {
+    btnExportar.addEventListener("click", () => {
+      if (nomes.length === 0) {
+        alert("Nenhum filme na roleta para exportar!");
+        return;
+      }
+
+      const contagem = {};
+      for (const nome of nomes) {
+        contagem[nome] = (contagem[nome] || 0) + 1;
+      }
+
+      let conteudo = "";
+      for (const [filme, qtd] of Object.entries(contagem)) {
+        conteudo += `${filme},${qtd}\n`;
+      }
+
+      const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `roleta-filmes-${new Date().toISOString().slice(0, 10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      alert("✅ Arquivo exportado!");
+    });
+  }
+}, 500);
