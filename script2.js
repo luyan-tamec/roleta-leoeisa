@@ -71,6 +71,56 @@ canvas.addEventListener('mouseup', () => {
   iniciouArraste = false;
 });
 
+// ─── VENCEDOR PRÉ-DEFINIDO (painel admin) ─────────────────────────────────────
+// Se o admin definir um nome em "Vencedor Pré-definido" e esse nome estiver na
+// roleta, o giro é guiado para parar exatamente nessa fatia. Se não houver nome
+// definido (ou ele não estiver na roleta), o sorteio segue 100% aleatório.
+let _vencedorForcadoIndex = null;
+
+function _verificarVencedorForcado() {
+  _vencedorForcadoIndex = null;
+  const cfg = (typeof adminGetConfig === "function") ? adminGetConfig() : null;
+  const nomeForcado = (cfg && cfg.vencedorForcado) ? String(cfg.vencedorForcado).trim() : "";
+  if (!nomeForcado) return;
+
+  const indices = [];
+  nomes.forEach((n, idx) => { if (n.toLowerCase() === nomeForcado.toLowerCase()) indices.push(idx); });
+
+  if (!indices.length) {
+    console.warn(`[vencedor pré-definido] "${nomeForcado}" está definido no painel, mas não está na roleta agora.`);
+    return;
+  }
+  _vencedorForcadoIndex = indices[Math.floor(Math.random() * indices.length)];
+  console.log(`[vencedor pré-definido] Giro será direcionado para "${nomeForcado}" (posição ${_vencedorForcadoIndex}).`);
+}
+
+// Calcula um ângulo final (em radianos, sempre à frente do ângulo atual) que faz
+// a seta apontar dentro da fatia do índice desejado, com uma pequena variação
+// aleatória dentro da fatia para não parecer sempre "certinho no meio".
+function _calcularAnguloParaIndice(indice) {
+  const t = nomes.length;
+  const ap = 2 * Math.PI / t;
+  const arrow = 3 * Math.PI / 2;
+  const jitter = (0.15 + Math.random() * 0.7) * ap; // evita cair bem na borda da fatia
+  const relAlvo = indice * ap + jitter;
+  const anguloBase = arrow - relAlvo;
+  const voltasExtra = 3 + Math.floor(Math.random() * 3); // 3–5 voltas extras, só de efeito visual
+  const passoAteBase = ((anguloBase - angulo) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  return angulo + passoAteBase + voltasExtra * 2 * Math.PI;
+}
+
+// Avisa o backend para limpar o "vencedor pré-definido" já usado, para que o
+// próximo giro volte a ser aleatório automaticamente.
+function _consumirVencedorForcado() {
+  if (typeof ADMIN_BACKEND_URL === "undefined") return;
+  fetch(`${ADMIN_BACKEND_URL}/api/config/consumir-vencedor`, { method: "POST" })
+    .then(r => r.json())
+    .then(res => {
+      if (res.ok) sessionStorage.setItem("admin_config", JSON.stringify(res.data));
+    })
+    .catch(() => { /* sem internet/backend fora do ar: não bloqueia a roleta */ });
+}
+
 function girar() {
   if (nomes.length < 1) {
     alert('Adiciona um nome Aê Paizao.');
@@ -87,6 +137,7 @@ function girar() {
   vel = Math.random() * 0.35 + 0.5;
   girando = true;
   ultimo = null;
+  _verificarVencedorForcado();
   const inicio = performance.now();
   let last = inicio;
   function loop(now) {
@@ -120,6 +171,33 @@ function parar() {
 }
 
 function suave() {
+  // ─── Caso 1: há um vencedor pré-definido válido → desaceleração controlada ──
+  if (_vencedorForcadoIndex !== null) {
+    const indiceAlvo = _vencedorForcadoIndex;
+    const anguloInicial = angulo;
+    const anguloAlvo = _calcularAnguloParaIndice(indiceAlvo);
+    const distancia = anguloAlvo - anguloInicial;
+    const duracao = 2600; // ms
+    const inicio = performance.now();
+    function stepControlado(now) {
+      const t = Math.min((now - inicio) / duracao, 1);
+      const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic — desacelera suave até parar
+      angulo = anguloInicial + distancia * ease;
+      tick();
+      desenhar();
+      if (t < 1) {
+        animFrameId = requestAnimationFrame(stepControlado);
+      } else {
+        if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+        girando = false;
+        _finalizarGiro(indiceAlvo, true);
+      }
+    }
+    animFrameId = requestAnimationFrame(stepControlado);
+    return;
+  }
+
+  // ─── Caso 2: sorteio 100% aleatório (comportamento original) ────────────────
   if (vel <= 0) vel = 0.001;
   function step() {
     vel *= 0.988;
@@ -138,26 +216,36 @@ function suave() {
       const arrow = 3 * Math.PI / 2;
       const rel = ((arrow - angulo) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
       const i = Math.floor(rel / ap);
-      const v = nomes[i];
-      playStopSound();
-      somVencedor.currentTime = 0;
-      somVencedor.play().catch(() => { });
-      setTimeout(() => {
-        musica.pause();
-        musica.currentTime = 0;
-        document.getElementById('btnMusica').textContent = '🎵 Tocar Música';
-      }, 3000);
-      setTimeout(() => {
-        document.body.classList.remove('painel-oculto');
-        btnMostrar.style.display = 'none';
-        // Para a animação de cor da roleta (corrigido — sem localStorage)
-        if (typeof pararAnimacaoRoleta === 'function') pararAnimacaoRoleta();
-      }, 2000);
-      destacar(i);
-      mostrarVencedor(v);
+      _finalizarGiro(i, false);
     }
   }
   animFrameId = requestAnimationFrame(step);
+}
+
+// Código compartilhado que roda quando a roleta acabou de parar (som, destaque,
+// exibição do vencedor), tanto no sorteio aleatório quanto no vencedor forçado.
+function _finalizarGiro(i, foiForcado) {
+  const v = nomes[i];
+  playStopSound();
+  somVencedor.currentTime = 0;
+  somVencedor.play().catch(() => { });
+  setTimeout(() => {
+    musica.pause();
+    musica.currentTime = 0;
+    document.getElementById('btnMusica').textContent = '🎵 Tocar Música';
+  }, 3000);
+  setTimeout(() => {
+    document.body.classList.remove('painel-oculto');
+    btnMostrar.style.display = 'none';
+    // Para a animação de cor da roleta (corrigido — sem localStorage)
+    if (typeof pararAnimacaoRoleta === 'function') pararAnimacaoRoleta();
+  }, 2000);
+  destacar(i);
+  mostrarVencedor(v);
+  if (foiForcado) {
+    _vencedorForcadoIndex = null;
+    _consumirVencedorForcado();
+  }
 }
 
 function destacar(i) {
