@@ -92,28 +92,47 @@ function applyMusicas(musicas) {
   
   console.log("[applyMusicas] 🎵 Recebido", musicas.length, "músicas do admin");
   
-  // Aguarda script.js ter criado a array 'musicas'
-  if (typeof window.musicas === "undefined") {
-    console.warn("[applyMusicas] ⚠️ window.musicas não está definida ainda, aguardando...");
-    setTimeout(() => applyMusicas(), 500);
-    return;
-  }
+  // Tenta atualizar a array window.musicas
+  const atualizar = () => {
+    if (typeof window.musicas === "undefined") {
+      console.warn("[applyMusicas] ⚠️ window.musicas ainda não está definida, tentando novamente...");
+      return false;
+    }
+    
+    // Substitui a array COMPLETAMENTE
+    window.musicas = musicas;
+    console.log("[applyMusicas] ✅ window.musicas SUBSTITUÍDA com", musicas.length, "músicas:", musicas.map(m => m.nome).join(", "));
+    return true;
+  };
   
-  // Substitui a array COMPLETAMENTE
-  window.musicas = musicas;
-  console.log("[applyMusicas] ✅ window.musicas SUBSTITUÍDA com", musicas.length, "músicas do admin");
+  // Tenta atualizar logo
+  if (!atualizar()) {
+    // Se não conseguir, retry a cada 100ms por até 3s
+    let tentativas = 0;
+    const intervalo = setInterval(() => {
+      tentativas++;
+      if (atualizar()) {
+        clearInterval(intervalo);
+      } else if (tentativas > 30) {
+        clearInterval(intervalo);
+        console.error("[applyMusicas] ❌ TIMEOUT: window.musicas nunca foi definida!");
+      }
+    }, 100);
+  }
   
   // Atualiza o select de músicas se existir
-  const selectSons = document.getElementById("sons");
-  if (selectSons && musicas.length > 0) {
-    const htmlOptions = musicas.map((m, i) => 
-      `<option value="${i}">${m.nome} ${m.tipo === 'youtube' ? '(YouTube)' : '(URL)'}</option>`
-    ).join('');
-    selectSons.innerHTML = htmlOptions;
-    selectSons.value = 0;
-    selectSons.dispatchEvent(new Event("change"));
-    console.log("[applyMusicas] ✅ Select 'sons' atualizado");
-  }
+  setTimeout(() => {
+    const selectSons = document.getElementById("sons");
+    if (selectSons && musicas.length > 0) {
+      const htmlOptions = musicas.map((m, i) => 
+        `<option value="${i}">${m.nome} ${m.tipo === 'youtube' ? '(YouTube)' : '(URL)'}</option>`
+      ).join('');
+      selectSons.innerHTML = htmlOptions;
+      selectSons.value = 0;
+      selectSons.dispatchEvent(new Event("change"));
+      console.log("[applyMusicas] ✅ Select 'sons' atualizado com", musicas.length, "opções");
+    }
+  }, 200);
 }
 
 // ─── APPLY CONFIG ─────────────────────────────────────────────────────────────

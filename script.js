@@ -114,11 +114,12 @@ const musicasHardcoded = [
 ];
 
 // MUSICAS_FROM_ADMIN vem de admin-sync.js se o backend estiver ativo
-let musicas = (typeof MUSICAS_FROM_ADMIN !== "undefined" && MUSICAS_FROM_ADMIN.length > 0) 
+// ⚠️ GLOBAL: window.musicas (não let musicas) para que admin-sync.js possa atualizar
+window.musicas = (typeof MUSICAS_FROM_ADMIN !== "undefined" && MUSICAS_FROM_ADMIN.length > 0) 
   ? MUSICAS_FROM_ADMIN 
   : musicasHardcoded;
 
-console.log("[script.js init] Inicializando musicas com", musicas.length, "items. Tipo:", typeof MUSICAS_FROM_ADMIN !== "undefined" ? "ADMIN" : "HARDCODED");
+console.log("[script.js init] ✅ window.musicas inicializado com", window.musicas.length, "items. Tipo:", typeof MUSICAS_FROM_ADMIN !== "undefined" ? "ADMIN" : "HARDCODED");
 
 const musica = new Audio();
 let musicaAtual = "";
