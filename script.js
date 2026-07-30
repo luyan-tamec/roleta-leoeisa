@@ -90,7 +90,7 @@ function playStopSound() {
 
 // Música
 const select = document.getElementById("sons");
-const musicas = [
+const musicasHardcoded = [
   "musicas/musica0.mp3",
   "musicas/musica1.mp3",
   "musicas/musica2.mp3",
@@ -113,19 +113,49 @@ const musicas = [
   "musicas/musica20.mp3"
 ];
 
+// MUSICAS_FROM_ADMIN vem de admin-sync.js se o backend estiver ativo
+let musicas = (typeof MUSICAS_FROM_ADMIN !== "undefined" && MUSICAS_FROM_ADMIN.length > 0) 
+  ? MUSICAS_FROM_ADMIN 
+  : musicasHardcoded;
+
 const musica = new Audio();
 let musicaAtual = "";
 let tocandoMusica = false;
 
 select.addEventListener("change", function () {
-  musica.src = musicas[select.value];
-  musicaAtual = musica.src;
+  const musicaObj = musicas[select.value];
+  
+  // Se for um objeto do admin (com url, tipo), extrai a URL
+  if (musicaObj && typeof musicaObj === "object" && musicaObj.url) {
+    let url = musicaObj.url;
+    
+    // Se for YouTube, usa um proxy para puxar só o áudio
+    if (musicaObj.tipo === "youtube") {
+      // Extrai o video ID
+      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+      if (ytMatch) {
+        const videoId = ytMatch[1];
+        // Usa um proxy de áudio (noembed ou invidious)
+        url = `https://www.youtube.com/embed/${videoId}`;
+        // Nota: este é um embed direto. Para áudio puro, seria necessário yt-dlp no backend
+        // Por enquanto, o usuário verá um aviso ou usará URL direto
+      }
+    }
+    
+    musica.src = url;
+    musicaAtual = url;
+  } else if (typeof musicaObj === "string") {
+    // Se for uma string (formato antigo/hardcoded)
+    musica.src = musicaObj;
+    musicaAtual = musicaObj;
+  }
+  
   musica.pause();
   musica.currentTime = 0;
   musica.loop = true;
   // Se já estava tocando, reinicia com a nova música
   if (document.getElementById('btnMusica').textContent === '⏸️ Parar Música') {
-    musica.play();
+    musica.play().catch(err => console.warn("[musica] erro ao tocar:", err));
   }
 });
 

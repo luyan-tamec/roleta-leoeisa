@@ -7,17 +7,18 @@ const ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com"; // ← troque pel
 // ─── FETCH INICIAL ────────────────────────────────────────────────────────────
 async function syncAdmin() {
   try {
-    const [cfgRes, arenaRes, sonsRes, imgRes, visRes, partRes] = await Promise.all([
+    const [cfgRes, arenaRes, sonsRes, imgRes, visRes, partRes, musicasRes] = await Promise.all([
       fetch(`${ADMIN_BACKEND_URL}/api/config`),
       fetch(`${ADMIN_BACKEND_URL}/api/arena`),
       fetch(`${ADMIN_BACKEND_URL}/api/sons`),
       fetch(`${ADMIN_BACKEND_URL}/api/imagens/bonecos`),
       fetch(`${ADMIN_BACKEND_URL}/api/visual`),
       fetch(`${ADMIN_BACKEND_URL}/api/participantes`),
+      fetch(`${ADMIN_BACKEND_URL}/api/musicas`),
     ]);
-    const [cfg, arena, sons, imgs, vis, part] = await Promise.all([
+    const [cfg, arena, sons, imgs, vis, part, musicas] = await Promise.all([
       cfgRes.json(), arenaRes.json(), sonsRes.json(),
-      imgRes.json(), visRes.json(), partRes.json(),
+      imgRes.json(), visRes.json(), partRes.json(), musicasRes.json(),
     ]);
     if (cfg.ok)   sessionStorage.setItem("admin_config",        JSON.stringify(cfg.data));
     if (arena.ok) sessionStorage.setItem("admin_arena",         JSON.stringify(arena.data));
@@ -25,6 +26,7 @@ async function syncAdmin() {
     if (imgs.ok)  sessionStorage.setItem("admin_bonecos",       JSON.stringify(imgs.data));
     if (vis.ok)   sessionStorage.setItem("admin_visual",        JSON.stringify(vis.data));
     if (part.ok)  sessionStorage.setItem("admin_participantes", JSON.stringify(part.data));
+    if (musicas.ok)  sessionStorage.setItem("admin_musicas",    JSON.stringify(musicas.data));
     console.log("[admin-sync] ✅ Configs carregadas.");
   } catch (e) {
     console.warn("[admin-sync] ⚠️ Backend offline, usando configs locais.", e.message);
@@ -37,6 +39,7 @@ function connectSSE() {
 
   sse.addEventListener("config",          e => { sessionStorage.setItem("admin_config",        e.data); applyConfig(JSON.parse(e.data)); });
   sse.addEventListener("sons",            e => { sessionStorage.setItem("admin_sons",          e.data); applySons(JSON.parse(e.data)); });
+  sse.addEventListener("musicas",         e => { sessionStorage.setItem("admin_musicas",       e.data); applyMusicas(JSON.parse(e.data)); });
   sse.addEventListener("arena",           e => { sessionStorage.setItem("admin_arena",         e.data); applyArena(JSON.parse(e.data)); });
   sse.addEventListener("visual",          e => { sessionStorage.setItem("admin_visual",        e.data); applyVisual(JSON.parse(e.data)); });
   sse.addEventListener("imagens",         e => { applyImagens(JSON.parse(e.data)); });
@@ -77,6 +80,29 @@ function adminGetSons()          { return JSON.parse(sessionStorage.getItem("adm
 function adminGetBonecos()       { return JSON.parse(sessionStorage.getItem("admin_bonecos")       || "null"); }
 function adminGetVisual()        { return JSON.parse(sessionStorage.getItem("admin_visual")        || "null"); }
 function adminGetParticipantes() { return JSON.parse(sessionStorage.getItem("admin_participantes") || "null"); }
+function adminGetMusicas()       { return JSON.parse(sessionStorage.getItem("admin_musicas")       || "null"); }
+
+// ─── APPLY MÚSICAS ────────────────────────────────────────────────────────────
+function applyMusicas(musicas) {
+  musicas = musicas || adminGetMusicas();
+  if (!musicas || !Array.isArray(musicas)) return;
+  
+  // Armazena as músicas globalmente para a roleta usar
+  if (typeof window.MUSICAS_FROM_ADMIN !== "undefined" || musicas.length > 0) {
+    window.MUSICAS_FROM_ADMIN = musicas;
+  }
+  
+  // Atualiza o select de músicas se existir
+  const selectSons = document.getElementById("sons");
+  if (selectSons && musicas.length > 0) {
+    const htmlOptions = musicas.map((m, i) => 
+      `<option value="${i}">${m.nome} ${m.tipo === 'youtube' ? '(YouTube)' : '(URL)'}</option>`
+    ).join('');
+    selectSons.innerHTML = htmlOptions;
+    if (selectSons.value >= musicas.length) selectSons.value = 0;
+    selectSons.dispatchEvent(new Event("change"));
+  }
+}
 
 // ─── APPLY CONFIG ─────────────────────────────────────────────────────────────
 function applyConfig(cfg) {
@@ -302,6 +328,7 @@ syncAdmin().then(() => {
   const apply = () => {
     applyConfig();
     applySons();
+    applyMusicas();
     applyArena();
     applyVisual();
     applyImagens();
