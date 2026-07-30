@@ -85,17 +85,23 @@ function adminGetMusicas()       { return JSON.parse(sessionStorage.getItem("adm
 // ─── APPLY MÚSICAS ────────────────────────────────────────────────────────────
 function applyMusicas(musicas) {
   musicas = musicas || adminGetMusicas();
-  if (!musicas || !Array.isArray(musicas)) return;
-  
-  // Armazena as músicas globalmente para a roleta usar
-  window.MUSICAS_FROM_ADMIN = musicas;
-  
-  // ⚠️ IMPORTANTÍSSIMO: Atualiza a array 'musicas' em script.js
-  // Sem isso, o select mostra os nomes do admin mas toca as hardcoded
-  if (typeof window.musicas !== "undefined") {
-    window.musicas = musicas;
-    console.log("[applyMusicas] ✅ Array 'musicas' atualizada com", musicas.length, "músicas do admin");
+  if (!musicas || !Array.isArray(musicas)) {
+    console.warn("[applyMusicas] ⚠️ Nenhuma música para carregar");
+    return;
   }
+  
+  console.log("[applyMusicas] 🎵 Recebido", musicas.length, "músicas do admin");
+  
+  // Aguarda script.js ter criado a array 'musicas'
+  if (typeof window.musicas === "undefined") {
+    console.warn("[applyMusicas] ⚠️ window.musicas não está definida ainda, aguardando...");
+    setTimeout(() => applyMusicas(), 500);
+    return;
+  }
+  
+  // Substitui a array COMPLETAMENTE
+  window.musicas = musicas;
+  console.log("[applyMusicas] ✅ window.musicas SUBSTITUÍDA com", musicas.length, "músicas do admin");
   
   // Atualiza o select de músicas se existir
   const selectSons = document.getElementById("sons");
@@ -104,8 +110,9 @@ function applyMusicas(musicas) {
       `<option value="${i}">${m.nome} ${m.tipo === 'youtube' ? '(YouTube)' : '(URL)'}</option>`
     ).join('');
     selectSons.innerHTML = htmlOptions;
-    if (selectSons.value >= musicas.length) selectSons.value = 0;
+    selectSons.value = 0;
     selectSons.dispatchEvent(new Event("change"));
+    console.log("[applyMusicas] ✅ Select 'sons' atualizado");
   }
 }
 
