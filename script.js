@@ -183,13 +183,40 @@ document.getElementById('volumeMusica').value = Math.round(musica.volume * 100);
 
 document.getElementById('btnMusica').onclick = () => {
   const musicaSelecionada = musicas[select.value];
-  if (musicaAtual !== musicaSelecionada) {
-    musica.src = musicaSelecionada;
-    musicaAtual = musicaSelecionada;
-    musica.loop = true;
+  console.log("[btnMusica] Tocando música #" + select.value, musicaSelecionada);
+  
+  // Precisa extrair a URL do objeto do admin, não atribuir o objeto direto
+  if (musicaSelecionada && typeof musicaSelecionada === "object" && musicaSelecionada.url) {
+    let url = musicaSelecionada.url;
+    
+    // Se for YouTube, extrai o video ID
+    if (musicaSelecionada.tipo === "youtube") {
+      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+      if (ytMatch) {
+        const videoId = ytMatch[1];
+        url = `https://www.youtube.com/embed/${videoId}`;
+        console.log("[btnMusica] ▶️ YouTube:", videoId);
+      }
+    }
+    
+    if (musicaAtual !== url) {
+      musica.src = url;
+      musicaAtual = url;
+      musica.loop = true;
+      console.log("[btnMusica] ✅ URL setada:", url);
+    }
+  } else if (typeof musicaSelecionada === "string") {
+    // Formato antigo/hardcoded
+    if (musicaAtual !== musicaSelecionada) {
+      musica.src = musicaSelecionada;
+      musicaAtual = musicaSelecionada;
+      musica.loop = true;
+      console.log("[btnMusica] 📀 Hardcoded:", musicaSelecionada);
+    }
   }
+  
   if (musica.paused) {
-    musica.play();
+    musica.play().catch(err => console.error("[btnMusica] Erro ao tocar:", err));
     document.getElementById('btnMusica').textContent = '⏸️ Parar Música';
   } else {
     musica.pause();
