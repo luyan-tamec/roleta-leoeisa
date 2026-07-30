@@ -134,18 +134,11 @@ select.addEventListener("change", function () {
     let url = musicaObj.url;
     console.log("[select.change] 🎵 Tipo:", musicaObj.tipo, "| URL original:", url);
     
-    // Se for YouTube, usa um proxy para puxar só o áudio
+    // Se for YouTube, usa a rota de stream do backend (yt-dlp)
     if (musicaObj.tipo === "youtube") {
-      // Extrai o video ID
-      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
-      if (ytMatch) {
-        const videoId = ytMatch[1];
-        // Usa um proxy de áudio (noembed ou invidious)
-        url = `https://www.youtube.com/embed/${videoId}`;
-        console.log("[select.change] ▶️ YouTube detectado. Video ID:", videoId);
-        // Nota: este é um embed direto. Para áudio puro, seria necessário yt-dlp no backend
-        // Por enquanto, o usuário verá um aviso ou usará URL direto
-      }
+      const streamUrl = `${ADMIN_BACKEND_URL}/api/musicas/stream?url=${encodeURIComponent(url)}`;
+      url = streamUrl;
+      console.log("[select.change] ▶️ YouTube detectado. Usando stream:", streamUrl);
     }
     
     musica.src = url;
@@ -190,14 +183,11 @@ document.getElementById('btnMusica').onclick = () => {
   if (musicaSelecionada && typeof musicaSelecionada === "object" && musicaSelecionada.url) {
     let url = musicaSelecionada.url;
     
-    // Se for YouTube, extrai o video ID
+    // Se for YouTube, usa a rota de stream do backend (yt-dlp)
     if (musicaSelecionada.tipo === "youtube") {
-      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
-      if (ytMatch) {
-        const videoId = ytMatch[1];
-        url = `https://www.youtube.com/embed/${videoId}`;
-        console.log("[btnMusica] ▶️ YouTube:", videoId);
-      }
+      const streamUrl = `${ADMIN_BACKEND_URL}/api/musicas/stream?url=${encodeURIComponent(url)}`;
+      url = streamUrl;
+      console.log("[btnMusica] ▶️ YouTube. Usando stream:", streamUrl);
     }
     
     if (musicaAtual !== url) {
