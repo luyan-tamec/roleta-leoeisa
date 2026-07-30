@@ -88,8 +88,13 @@ function applyMusicas(musicas) {
   if (!musicas || !Array.isArray(musicas)) return;
   
   // Armazena as músicas globalmente para a roleta usar
-  if (typeof window.MUSICAS_FROM_ADMIN !== "undefined" || musicas.length > 0) {
-    window.MUSICAS_FROM_ADMIN = musicas;
+  window.MUSICAS_FROM_ADMIN = musicas;
+  
+  // ⚠️ IMPORTANTÍSSIMO: Atualiza a array 'musicas' em script.js
+  // Sem isso, o select mostra os nomes do admin mas toca as hardcoded
+  if (typeof window.musicas !== "undefined") {
+    window.musicas = musicas;
+    console.log("[applyMusicas] ✅ Array 'musicas' atualizada com", musicas.length, "músicas do admin");
   }
   
   // Atualiza o select de músicas se existir

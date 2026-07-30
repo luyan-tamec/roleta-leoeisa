@@ -118,16 +118,20 @@ let musicas = (typeof MUSICAS_FROM_ADMIN !== "undefined" && MUSICAS_FROM_ADMIN.l
   ? MUSICAS_FROM_ADMIN 
   : musicasHardcoded;
 
+console.log("[script.js init] Inicializando musicas com", musicas.length, "items. Tipo:", typeof MUSICAS_FROM_ADMIN !== "undefined" ? "ADMIN" : "HARDCODED");
+
 const musica = new Audio();
 let musicaAtual = "";
 let tocandoMusica = false;
 
 select.addEventListener("change", function () {
   const musicaObj = musicas[select.value];
+  console.log("[select.change] Selecionada música #" + select.value, musicaObj);
   
   // Se for um objeto do admin (com url, tipo), extrai a URL
   if (musicaObj && typeof musicaObj === "object" && musicaObj.url) {
     let url = musicaObj.url;
+    console.log("[select.change] 🎵 Tipo:", musicaObj.tipo, "| URL original:", url);
     
     // Se for YouTube, usa um proxy para puxar só o áudio
     if (musicaObj.tipo === "youtube") {
@@ -137,6 +141,7 @@ select.addEventListener("change", function () {
         const videoId = ytMatch[1];
         // Usa um proxy de áudio (noembed ou invidious)
         url = `https://www.youtube.com/embed/${videoId}`;
+        console.log("[select.change] ▶️ YouTube detectado. Video ID:", videoId);
         // Nota: este é um embed direto. Para áudio puro, seria necessário yt-dlp no backend
         // Por enquanto, o usuário verá um aviso ou usará URL direto
       }
@@ -144,10 +149,14 @@ select.addEventListener("change", function () {
     
     musica.src = url;
     musicaAtual = url;
+    console.log("[select.change] ✅ Tocando:", url);
   } else if (typeof musicaObj === "string") {
     // Se for uma string (formato antigo/hardcoded)
     musica.src = musicaObj;
     musicaAtual = musicaObj;
+    console.log("[select.change] 📀 Hardcoded:", musicaObj);
+  } else {
+    console.warn("[select.change] ⚠️ Objeto inválido ou undefined:", musicaObj);
   }
   
   musica.pause();
