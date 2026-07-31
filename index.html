@@ -45,30 +45,42 @@
               iframe.allow = "autoplay";
               
               // ✅ Chain de instâncias Invidious (sem ads)
+              // Se nenhuma funcionar, usa YouTube normal
               const instancias = [
                 `https://invidious.io/embed/${videoId}`,
                 `https://yewtu.be/embed/${videoId}`,
-                `https://inv.riverside.rocks/embed/${videoId}`,
-                `https://www.youtube.com/embed/${videoId}` // Fallback final
+                `https://inv.riverside.rocks/embed/${videoId}`
               ];
               
               let indexInstancia = 0;
+              let tentativasFeitas = 0;
+              const maxTentativas = 3;
               
-              function tentarCarregar() {
+              function tentarProxima() {
                 if (indexInstancia < instancias.length) {
                   iframe.src = instancias[indexInstancia];
                   indexInstancia++;
-                } else {
-                  console.warn("[video] Nenhuma instância funcionou para", videoId);
+                  tentativasFeitas++;
+                } else if (tentativasFeitas >= maxTentativas) {
+                  // Todas as instâncias falharam, volta pro YouTube normal
+                  console.log("[video] Instâncias Invidious falharam, usando YouTube oficial");
+                  iframe.src = `https://www.youtube.com/embed/${videoId}`;
+                  iframe.onerror = null; // Remove o listener de erro
                 }
               }
               
-              iframe.onerror = () => tentarCarregar();
-              iframe.onload = () => {
-                console.log("[video] ✅ Carregou em:", iframe.src);
+              iframe.onerror = () => {
+                if (tentativasFeitas < maxTentativas) {
+                  tentarProxima();
+                }
               };
               
-              tentarCarregar();
+              iframe.onload = () => {
+                console.log("[video] ✅ Carregou:", iframe.src);
+                iframe.onerror = null; // Remove listener se carregou
+              };
+              
+              tentarProxima();
               
               const title = document.createElement("p");
               title.textContent = video.snippet.title;
