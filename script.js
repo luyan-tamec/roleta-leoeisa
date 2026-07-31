@@ -1,4 +1,28 @@
+// 1. CARREGAR SUPABASE
+const loader = new RoletaSupabaseLoader({
+  apiUrl: "http://localhost:3001" // mudar em produção
+});
+
+let imagensDaRoleta = [];
+let playlistMusicas = [];
+
+// 2. CARREGAR DADOS AO INICIAR
+window.addEventListener('load', async () => {
+  console.log("🚀 Carregando dados do Supabase...");
+  
+  // Carregar imagens
+  imagensDaRoleta = await loader.carregarImagens();
+  console.log("✅ Imagens carregadas:", imagensDaRoleta.length);
+  
+  // Carregar sons
+  const dados = await loader.carregarSons();
+  playlistMusicas = dados.musicas;
+  console.log("✅ Sons carregados:", playlistMusicas.length);
+});
+
+
 const PREFIX = "r1_";
+
 
 const canvas = document.getElementById('roleta');
 const ctx = canvas.getContext('2d');
