@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Roleta Rindo e Apoiando!</title>
+  <link rel="stylesheet" href="styles/style.css">
+  <link rel="stylesheet" href="styles/stylearena.css">
+  <link rel="stylesheet" href="styles/code-vote.css"
+  <link rel="stylesheet" href="styles/search.css">
+  <link rel="shortcut icon" href="img/will.png" type="image/x-icon">
+</head>
+
+<body id="fundo">
+  <!-- Menu Sidebar YouTube -->
+  <button class="botaomenu" onclick="toggleMenu()">Youtube</button>
+  <div id="menu" class="menusidebar">
+    <div class="controls-side">
+      <div class="busca-container">
+        <input type="text" id="busca" placeholder="Digite sua busca">
+        <button onclick="buscarVideos()">Buscar Vídeos</button>
+      </div>
+      <div id="videos"></div>
+    </div>
+    <script>
+      const apiKey = "AIzaSyB1wkiHkuvoxQ-C48-_8ZIAuyVsHqMvtgE";
+
+      function buscarVideos() {
+        const busca = document.getElementById("busca").value;
+        const resultado = busca.replace(/\s+/g, "+");
+        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${resultado}&key=${apiKey}&maxResults=10`)
+          .then(res => res.json())
+          .then(data => {
+            const div = document.getElementById("videos");
+            div.innerHTML = "";
+            data.items.forEach(video => {
+              const cartao = document.createElement("div");
+              cartao.classList.add("cartao-video");
+              const videoId = video.id.videoId;
+              const iframe = document.createElement("iframe");
+              iframe.width = "100%";
+              iframe.height = "300";
+              iframe.src = `https://www.youtube.com/embed/${videoId}`;
+              iframe.frameBorder = "0";
+              iframe.allowFullscreen = true;
+              const title = document.createElement("p");
+              title.textContent = video.snippet.title;
+              cartao.appendChild(iframe);
+              cartao.appendChild(title);
+              div.appendChild(cartao);
+            });
+          });
+      }
+
+      const menu = document.getElementById("menu");
+      function toggleMenu() {
+        menu.classList.toggle("show");
+      }
+    </script>
+  </div>
+
+  <div class="layout">
+    <div id="arena"></div>
+    <div class="painel">
+      <div class="cartao" id="painel">
+        <h1 id="titulo" class="titulo">Rindo e Apoiando !!</h1>
+
+        <div class="controls">
+          <button id="esconder-btn-top" class="esconder-btn">mais opçoes🔽</button>
+
+          <div id="bloco-top" class="bloco-top">
+            <button id="btnOcultarPainel" style="height: 38px;">🙈 Ocultar Painel</button>
+            <input class="caixacheck" type="checkbox" id="meucheck" checked>
+            <label for="meucheck">ocultar <br> painel <br>automaticamente</label>
+            <button id="btnTema">Tema</button>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <input class="caixacheck" type="checkbox" id="checkTemaRotar">
+              <label for="checkTemaRotar" style="font-size:11px;color:#ccc;line-height:1.3;">trocar<br>tema<br>auto</label>
+            </div>
+            <select id="modoCor">
+              <option value="colorido" selected>🏳‍🌈 cores do vale</option>
+              <option value="neutro">⚪ cores Neutras</option>
+            </select>
+            <button id="toggleChat">Mostrar Chat</button>
+            <select id="indexboneco">
+              <option value="z-index:-3;">Desativar</option>
+              <option value="z-index:-2;" >Boneco Atras da roleta</option>
+              <option value="z-index: 999;" selected>Boneco A frente da roleta</option>
+            </select>
+          </div>
+
+          <div class="blocoessencial">
+            <input id="nome" type="text" placeholder="Digite um nome">
+            <input id="quantidade" type="number" min="1" value="" placeholder="quantidade" style="width:80px;">
+            <button id="btnAdicionar">Adicionar</button>
+            <input id="tempo" type="number" min="1" placeholder="Tempo (seg)" style="width:110px;">
+
+            <button class="btnembaralhar" id="btnEmbaralhar">🔀 Embaralhar</button>
+            <button id="btnIniciar" style="background-color:#43a047;color:#fff;" onclick="iniciar()">Iniciar</button>
+            <button id="btnParar" style="background-color:#e53935;color:#fff;">Parar</button><br>
+
+            <section style="width: 90%;">
+              <select name="sons" id="sons" style="width: 100%; background-color: rgb(120, 8, 88); color: white; overflow: auto;">
+                <option value="0" selected>Silvio Santos (padrao)</option>
+                <option value="1">Sou humano (gospel)</option>
+                <option value="2">Como zaquel (gospel)</option>
+                <option value="3">Noites traiçoeiras (gospel)</option>
+                <option value="4">Ragatanga</option>
+                <option value="5">we are the champions</option>
+                <option value="6">Rock balboa</option>
+                <option value="7">Rock balboa 2</option>
+                <option value="8">psy-Gangnam style</option>
+                <option value="9">Roleta Vira e Volta (Sei lá)</option>
+                <option value="10">Missao impossivel (filme)</option>
+                <option value="11">Quem é esse ? (gospel)</option>
+                <option value="12">Tango balango (reliquia tvcultura)</option>
+                <option value="13">Jesus Cristo (gospel)</option>
+                <option value="14">butterfly (msc reliquia celular de feira)</option>
+                <option value="15">uni duni te (balao magico)</option>
+                <option value="16">No baile nois é midia (mc poze anos 90)</option>
+                <option value="17">Musica padrao de sorteio (generica mixuruca)</option>
+                
+                <option value="19">Marcelo Karalho enfia o pastelao no c#</option>
+                <option value="20">Boate Azul </option>
+              </select><br>
+              <div class="div-check-music" title="Tocar música ao girar">
+                <input class="caixacheckmusic" type="checkbox" id="meucheckmusic">
+                <label for="meucheckmusic"></label>
+                <span class="tooltip-text">Tocar musica ao girar</span>
+              </div>
+              <input type="range" min="0" value="0" max="360" id="tempo-msc" class="tempo-msc" style="width: 80%;">
+              <label id="span-tempo" for="tempo-msc">Tempo da Musica</label>
+              <div id="render"></div>
+            </section>
+
+            <button class="musica" id="btnMusica">🎵 Tocar Música</button>
+            <button id="btnFullscreen">🖥️ Tela Cheia</button>
+            <button id="btnFilmes" style="background-color:#e87c00;color:#fff;">🎬 Importar Filmes</button>
+            <button id="btnVips" style="background-color:#9146ff;color:#fff;">⭐ VIPs</button>
+            <button id="btnLimpar">🧹 Limpar Tudo</button>
+
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input class="caixacheck" type="checkbox" id="checkAutoRemover">
+              <label for="checkAutoRemover" style="font-size:12px;color:#ccc;line-height:1.3;">remover<br>vencedor<br>auto</label>
+            </div>
+            <button id="btn-voto">VOTAÇAO S/N</button>
+
+            <label style="display:flex;align-items:center;gap:6px;color:#ccc;">
+              🔊vol.musica
+              <input type="range" id="volumeMusica" min="0" max="10" value="1" style="width:120px;">
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;color:#ccc; letter-spacing: 3px;">
+              🔔vol.seta
+              <input type="range" id="volTick" min="0" max="10" value="10" style="width:120px;">
+            </label>
+
+            <div id="vote-widget" class="votos-widget">
+              <button id="linkobs" style="display:flex;width:50%;font-size:0.5rem;height:20px;text-align:center;margin-bottom:20px;justify-content:center;align-items:center;">link para overlay obs📋</button>
+            </div>
+          </div>
+        </div>
+
+        <button id="esconder-btn" class="esconder-btn">mais opçoes🔽</button>
+        <div class="extras" id="extra">
+          <input type="file" id="inputCSV" accept=".csv" style="display:none;">
+          <button id="btnImportar">📥 Importar CSV</button>
+          <select id="colunaCSV">
+            <option value="0">Coluna 1</option>
+            <option value="1">Coluna 2</option>
+            <option value="2">Coluna 3</option>
+            <option value="3">Coluna 4</option>
+          </select>
+          <button id="btnExportar">📤 Exportar CSV</button>
+
+          <input type="file" id="inputTXT" accept=".txt" style="display:none;">
+          <button id="btnImportarTxt">📥 Importar TXT</button>
+          <button id="btnExportarTxt">📤 Exportar TXT</button>
+        </div>
+      </div>
+
+      <div id="ultimosVencedores">
+        <strong>🏆 Últimos Vencedores</strong>
+        <div id="listaVencedores"></div>
+        <button id="btnLimparVencedores" style="margin-top:8px;background:#e53935;color:#fff;height:35px;">🗑️ Limpar Vencedores</button>
+      </div>
+
+      <div class="cartaonomes" id="cartaonames">
+        <div id="input-group">
+          <input id="search" type="text" class="input-field" placeholder="Pesquisar">
+        </div>
+        <div id="listaNomes"></div>
+      </div>
+    </div>
+
+    <div id="container">
+      <div class="seta"></div>
+      <canvas id="roleta"></canvas>
+      <img src="img/centro.png" class="centro">
+      <div id="chatBox">
+        <iframe class="centrochat" src="static/chat.html" frameborder="0"></iframe>
+      </div>
+      <div class="resultover"></div>
+      <div id="resultadoOverlay"></div>
+    </div>
+  </div>
+
+  <button id="btnMostrarPainel" style="display:none;">📋 Mostrar Painel</button>
+
+  <footer>@Todos os direitos reservados a empresa Rindo &amp; Apoiando 2026</footer>
+
+  <script src="admin-sync.js"></script>
+  <script src="tmi.min.js" defer></script>
+  <script src="script.js" defer></script>
+  <script src="script2.js" defer></script>
+  <script src="script3.js" defer></script>
+  <script src="script4.js" defer></script>
+  <script src="scrparena.js" defer></script>
+  <script src="code-vote.js" defer></script>
+  <script src="search.js" defer></script>
+
+<script>
+// ===== MODAL VIPs =====
+// ↓↓ EDITE AQUI OS NOMES VIPs ↓↓
+const LISTA_VIPS = [
+  "marcoschaefer_",
+  "larissacristina1996",
+  "isa_millena",
+  "camaradantonio",
+  "pedraohcs",
+  "drex_d",
+  "yeshen_roza",
+  "rlukao",
+  "mazokagameplays",
+  "laisedonascimento",
+  "straiderbr",
+  "diegochueiri",
+  "somichn",
+  "wiill__wiill",
+  "garan_elderan",
+  "peppaviroubacon",
+  "mrnuggettss",
+  "matheus_llevi",
+  "rodrace05",
+  "jotinhhaa_",
+  "merizito",
+  "heugy",
+  "aleziiinho",
+  "gustavotchavo",
+  "gusta_roza",
+  "vitorivrest",
+  "dino_vsf",
+  "mrtziow",
+  "allyne_hater_do_leo",
+  "oi_mana_",
+  "daviviana2003",
+  "evertonxp0923",
+  "breakktv",
+  "soyaanna",
+  "frank_pimentel20",
+  "capivara__cansada",
+  "tomastigano1",
+  "vitorzm",
+  "alucardsf1",
+  "thiago_s3_",
+  "hat01",
+  "fabriciosilva910",
+  "matheus_targaryenn",
+  "sussanomon",
+  "erik_1910",
+  "ruuzbee",
+  "jettline"
+];
+// ↑↑ FIM DA LISTA ↑↑
+
+function abrirModalVips() {
+  if (!LISTA_VIPS.length) {
+    alert("A lista de VIPs está vazia. Edite o array LISTA_VIPS no index.html.");
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.id = "modalVipsOverlay";
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.85);
+    z-index:9999;display:flex;align-items:center;justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background:#1a1a1a;border:2px solid #9146ff;border-radius:20px;
+      padding:24px;width:min(95vw,480px);max-height:85vh;
+      display:flex;flex-direction:column;gap:12px;
+    ">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 style="margin:0;color:#fff;font-size:1.1rem;">⭐ Adicionar VIPs à Roleta</h2>
+        <span id="vipContador" style="color:#9146ff;font-weight:700;font-size:13px;background:rgba(145,70,255,0.15);padding:4px 10px;border-radius:20px;">0 selecionados</span>
+      </div>
+
+      <input id="vipSearch" type="text" placeholder="Pesquisar VIP..." style="
+        flex:1;padding:8px 12px;border-radius:10px;border:none;
+        background:#333;color:#fff;font-size:13px;outline:none;
+      ">
+
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button id="vipSelecionarTodos" style="padding:6px 12px;border-radius:10px;background:#555;color:#fff;font-size:12px;border:none;cursor:pointer;">✅ Selecionar tudo</button>
+        <button id="vipDesmarcarTodos" style="padding:6px 12px;border-radius:10px;background:#555;color:#fff;font-size:12px;border:none;cursor:pointer;">❌ Desmarcar tudo</button>
+      </div>
+
+      <div id="vipListaScroll" style="
+        overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;
+        max-height:380px;padding-right:4px;
+      "></div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="vipCancelar" style="
+          padding:10px 18px;border-radius:12px;background:#444;
+          color:#fff;border:none;cursor:pointer;font-weight:700;
+        ">Cancelar</button>
+        <button id="vipConfirmar" style="
+          padding:10px 18px;border-radius:12px;background:#9146ff;
+          color:#fff;border:none;cursor:pointer;font-weight:700;
+        ">⭐ Adicionar à Roleta</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const lista        = document.getElementById("vipListaScroll");
+  const searchInput  = document.getElementById("vipSearch");
+  const contador     = document.getElementById("vipContador");
+  let selecionados = new Set();
+  let qtdPorVip    = {}; // nome -> quantidade de tickets
+
+  function atualizarContador() {
+    contador.textContent = selecionados.size + " selecionado" + (selecionados.size !== 1 ? "s" : "");
+  }
+
+  function renderLista() {
+    const busca = searchInput.value.toLowerCase();
+    const filtrados = LISTA_VIPS.filter(n => n.toLowerCase().includes(busca));
+    lista.innerHTML = "";
+
+    filtrados.forEach(nome => {
+      const marcado = selecionados.has(nome);
+      const item = document.createElement("div");
+      item.style.cssText = `
+        display:flex;align-items:center;gap:10px;padding:10px 14px;
+        border-radius:10px;cursor:pointer;
+        background:${marcado ? "rgba(145,70,255,0.25)" : "rgba(255,255,255,0.05)"};
+        border:1px solid ${marcado ? "#9146ff" : "transparent"};
+        transition:background 0.15s;
+      `;
+
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.checked = marcado;
+      check.style.cssText = "accent-color:#9146ff;width:16px;height:16px;cursor:pointer;flex-shrink:0;";
+
+      const label = document.createElement("span");
+      label.style.cssText = "color:#fff;font-size:14px;flex:1;font-weight:500;";
+      label.textContent = nome;
+
+      const badge = document.createElement("span");
+      badge.style.cssText = "color:#9146ff;font-size:11px;font-weight:700;background:rgba(145,70,255,0.15);padding:2px 8px;border-radius:20px;flex-shrink:0;";
+      badge.textContent = "VIP";
+
+      // Controle de quantidade
+      const controle = document.createElement("div");
+      controle.style.cssText = "display:flex;align-items:center;gap:4px;flex-shrink:0;";
+      controle.innerHTML = `
+        <button class="vip-preset" data-v="1"  style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">+1</button>
+        <button class="vip-preset" data-v="5"  style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">+5</button>
+        <button class="vip-preset" data-v="10" style="padding:3px 7px;border-radius:8px;background:#444;color:#fff;font-size:11px;border:none;cursor:pointer;">+10</button>
+        <input class="vip-qtd" type="number" min="1" value="${qtdPorVip[nome] || 1}" style="
+          width:46px;padding:3px 6px;border-radius:8px;border:1px solid #9146ff;
+          background:#222;color:#9146ff;font-size:12px;font-weight:700;text-align:center;
+        ">
+      `;
+
+      controle.querySelectorAll(".vip-preset").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          const input = controle.querySelector(".vip-qtd");
+          const atual = parseInt(input.value) || 1;
+          input.value = atual + parseInt(btn.dataset.v);
+          qtdPorVip[nome] = parseInt(input.value);
+        });
+      });
+      controle.querySelector(".vip-qtd").addEventListener("click", e => e.stopPropagation());
+      controle.querySelector(".vip-qtd").addEventListener("input", e => {
+        const v = Math.max(1, parseInt(e.target.value) || 1);
+        qtdPorVip[nome] = v;
+        e.target.value = v;
+      });
+
+      item.appendChild(check);
+      item.appendChild(label);
+      item.appendChild(badge);
+      item.appendChild(controle);
+
+      item.addEventListener("click", () => {
+        if (selecionados.has(nome)) selecionados.delete(nome);
+        else selecionados.add(nome);
+        atualizarContador();
+        renderLista();
+      });
+
+      lista.appendChild(item);
+    });
+  }
+
+  renderLista();
+  atualizarContador();
+  searchInput.addEventListener("input", renderLista);
+
+  document.getElementById("vipSelecionarTodos").onclick = () => {
+    const busca = searchInput.value.toLowerCase();
+    LISTA_VIPS.filter(n => n.toLowerCase().includes(busca)).forEach(n => selecionados.add(n));
+    atualizarContador();
+    renderLista();
+  };
+
+  document.getElementById("vipDesmarcarTodos").onclick = () => {
+    selecionados.clear();
+    atualizarContador();
+    renderLista();
+  };
+
+  document.getElementById("vipConfirmar").onclick = () => {
+    const modo = localStorage.getItem(PREFIX + "modoCor") || "colorido";
+    const paraAdicionar = selecionados.size > 0 ? [...selecionados] : [...LISTA_VIPS];
+    let totalTickets = 0;
+
+    for (const nm of paraAdicionar) {
+      const vezes = Math.max(1, parseInt(qtdPorVip[nm]) || 1);
+      for (let i = 0; i < vezes; i++) {
+        nomes.push(nm);
+        if (modo === "colorido") {
+          cores.push(corAleatoria());
+        } else {
+          cores.push(paletaNeutra[Math.floor(Math.random() * paletaNeutra.length)]);
+        }
+      }
+      totalTickets += vezes;
+    }
+
+    salvar();
+    gerarBuffer();
+    desenhar();
+    embaralhar();
+    atualizarCentro();
+    atualizar();
+    document.body.removeChild(overlay);
+    alert(`⭐ ${paraAdicionar.length} VIP(s) adicionado(s) com ${totalTickets} ticket(s) no total!`);
+  };
+
+  document.getElementById("vipCancelar").onclick = () => document.body.removeChild(overlay);
+  overlay.addEventListener("click", e => { if (e.target === overlay) document.body.removeChild(overlay); });
+}
+
+document.getElementById("btnVips").addEventListener("click", abrirModalVips);
+</script>
+
+</body>
+
+</html>
