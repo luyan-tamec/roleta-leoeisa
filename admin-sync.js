@@ -7,17 +7,18 @@ const ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com"; // ← troque pel
 // ─── FETCH INICIAL ────────────────────────────────────────────────────────────
 async function syncAdmin() {
   try {
-    const [cfgRes, arenaRes, sonsRes, imgRes, visRes, partRes] = await Promise.all([
+    const [cfgRes, arenaRes, sonsRes, imgRes, visRes, partRes, playlistRes] = await Promise.all([
       fetch(`${ADMIN_BACKEND_URL}/api/config`),
       fetch(`${ADMIN_BACKEND_URL}/api/arena`),
       fetch(`${ADMIN_BACKEND_URL}/api/sons`),
       fetch(`${ADMIN_BACKEND_URL}/api/imagens/bonecos`),
       fetch(`${ADMIN_BACKEND_URL}/api/visual`),
       fetch(`${ADMIN_BACKEND_URL}/api/participantes`),
+      fetch(`${ADMIN_BACKEND_URL}/api/musicas`),
     ]);
-    const [cfg, arena, sons, imgs, vis, part] = await Promise.all([
+    const [cfg, arena, sons, imgs, vis, part, playlist] = await Promise.all([
       cfgRes.json(), arenaRes.json(), sonsRes.json(),
-      imgRes.json(), visRes.json(), partRes.json(),
+      imgRes.json(), visRes.json(), partRes.json(), playlistRes.json(),
     ]);
     if (cfg.ok)   sessionStorage.setItem("admin_config",        JSON.stringify(cfg.data));
     if (arena.ok) sessionStorage.setItem("admin_arena",         JSON.stringify(arena.data));
@@ -25,6 +26,7 @@ async function syncAdmin() {
     if (imgs.ok)  sessionStorage.setItem("admin_bonecos",       JSON.stringify(imgs.data));
     if (vis.ok)   sessionStorage.setItem("admin_visual",        JSON.stringify(vis.data));
     if (part.ok)  sessionStorage.setItem("admin_participantes", JSON.stringify(part.data));
+    if (playlist.ok) sessionStorage.setItem("admin_playlist",   JSON.stringify(playlist.data));
     console.log("[admin-sync] ✅ Configs carregadas.");
   } catch (e) {
     console.warn("[admin-sync] ⚠️ Backend offline, usando configs locais.", e.message);
@@ -41,6 +43,7 @@ function connectSSE() {
   sse.addEventListener("visual",          e => { sessionStorage.setItem("admin_visual",        e.data); applyVisual(JSON.parse(e.data)); });
   sse.addEventListener("imagens",         e => { applyImagens(JSON.parse(e.data)); });
   sse.addEventListener("bonecos",         e => { sessionStorage.setItem("admin_bonecos",       e.data); applyBonecos(JSON.parse(e.data)); });
+  sse.addEventListener("playlist",        e => { sessionStorage.setItem("admin_playlist",      e.data); applyPlaylist(JSON.parse(e.data)); });
   sse.addEventListener("participantes",   e => {
     const lista = JSON.parse(e.data);
     sessionStorage.setItem("admin_participantes", e.data);
@@ -77,6 +80,7 @@ function adminGetSons()          { return JSON.parse(sessionStorage.getItem("adm
 function adminGetBonecos()       { return JSON.parse(sessionStorage.getItem("admin_bonecos")       || "null"); }
 function adminGetVisual()        { return JSON.parse(sessionStorage.getItem("admin_visual")        || "null"); }
 function adminGetParticipantes() { return JSON.parse(sessionStorage.getItem("admin_participantes") || "null"); }
+function adminGetPlaylist()      { return JSON.parse(sessionStorage.getItem("admin_playlist")      || "null"); }
 
 // ─── APPLY CONFIG ─────────────────────────────────────────────────────────────
 function applyConfig(cfg) {
@@ -184,6 +188,39 @@ function applyBonecos(bonecos) {
   if (typeof BONECOS_REMOTE !== "undefined" && Array.isArray(bonecos)) {
     window.BONECOS_REMOTE = bonecos.length > 0 ? bonecos : null;
   }
+}
+
+// ─── APPLY PLAYLIST ───────────────────────────────────────────────────────────
+// Acrescenta as músicas enviadas pelo painel (Supabase Storage) no fim da lista
+// fixa que já existe em script.js — sem precisar reescrever o player.
+// musicas[] e select (#sons) são globais definidos em script.js.
+let _playlistAplicada = 0;
+function applyPlaylist(playlist) {
+  playlist = playlist || adminGetPlaylist();
+  if (!playlist || !Array.isArray(playlist)) return;
+  if (typeof musicas === "undefined" || typeof select === "undefined") return;
+
+  // Remove as opções da playlist adicionadas anteriormente antes de reaplicar
+  // (evita duplicar quando chega um novo evento SSE de playlist).
+  if (_playlistAplicada > 0) {
+    for (let i = 0; i < _playlistAplicada; i++) {
+      const opt = select.querySelector(`option[data-playlist="1"]`);
+      if (opt) opt.remove();
+    }
+  }
+
+  const baseLen = musicas.length - _playlistAplicada;
+  musicas.length = baseLen;
+
+  playlist.forEach((track, i) => {
+    musicas[baseLen + i] = track.url;
+    const opt = document.createElement("option");
+    opt.value = baseLen + i;
+    opt.dataset.playlist = "1";
+    opt.textContent = `🎶 ${track.nome}`;
+    select.appendChild(opt);
+  });
+  _playlistAplicada = playlist.length;
 }
 
 // ─── APPLY PARTICIPANTES ──────────────────────────────────────────────────────
@@ -301,6 +338,7 @@ function _atualizarModoteste() {
 syncAdmin().then(() => {
   const apply = () => {
     applyConfig();
+    applyPlaylist();
     applySons();
     applyArena();
     applyVisual();
