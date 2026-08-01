@@ -42,8 +42,8 @@ function connectSSE() {
   sse.addEventListener("arena",           e => { sessionStorage.setItem("admin_arena",         e.data); applyArena(JSON.parse(e.data)); });
   sse.addEventListener("visual",          e => { sessionStorage.setItem("admin_visual",        e.data); applyVisual(JSON.parse(e.data)); });
   sse.addEventListener("imagens",         e => { applyImagens(JSON.parse(e.data)); });
-  sse.addEventListener("bonecos",         e => { sessionStorage.setItem("admin_bonecos",       e.data); applyBonecos(JSON.parse(e.data)); });
-  sse.addEventListener("playlist",        e => { sessionStorage.setItem("admin_playlist",      e.data); applyPlaylist(JSON.parse(e.data)); });
+  sse.addEventListener("bonecos",         e => { sessionStorage.setItem("admin_bonecos",       e.data); try { applyBonecos(JSON.parse(e.data)); } catch (err) { console.warn("[admin-sync] applyBonecos:", err.message); } });
+  sse.addEventListener("playlist",        e => { sessionStorage.setItem("admin_playlist",      e.data); try { applyPlaylist(JSON.parse(e.data)); } catch (err) { console.warn("[admin-sync] applyPlaylist:", err.message); } });
   sse.addEventListener("participantes",   e => {
     const lista = JSON.parse(e.data);
     sessionStorage.setItem("admin_participantes", e.data);
@@ -336,15 +336,30 @@ function _atualizarModoteste() {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 syncAdmin().then(() => {
+  // Cada etapa isolada em try/catch: script.js/script3.js podem ainda não ter
+  // terminado de rodar quando a API responde rápido demais (variáveis como
+  // `musicas`/`nomes` existem mas ainda não foram inicializadas — TDZ). Sem o
+  // isolamento, um erro numa etapa derrubava todas as seguintes.
+  const seguro = (fn, nome) => {
+    try { fn(); } catch (e) { console.warn(`[admin-sync] ⚠️ Falha em ${nome}, tentando de novo em breve:`, e.message); return false; }
+    return true;
+  };
+
   const apply = () => {
-    applyConfig();
-    applyPlaylist();
-    applySons();
-    applyArena();
-    applyVisual();
-    applyImagens();
-    // Participantes aplicados após a roleta carregar seus próprios dados
-    setTimeout(() => applyParticipantes(), 500);
+    seguro(applyConfig, "applyConfig");
+    seguro(applySons, "applySons");
+    seguro(applyArena, "applyArena");
+    seguro(applyVisual, "applyVisual");
+    seguro(applyImagens, "applyImagens");
+
+    // Playlist e participantes dependem de variáveis (`musicas`, `select`, `nomes`)
+    // definidas em script.js/script3.js — damos uma folga e tentamos de novo se
+    // ainda não estiverem prontas.
+    const tentarPlaylist = () => { if (!seguro(applyPlaylist, "applyPlaylist")) setTimeout(tentarPlaylist, 500); };
+    setTimeout(tentarPlaylist, 300);
+    const tentarParticipantes = () => { if (!seguro(applyParticipantes, "applyParticipantes")) setTimeout(tentarParticipantes, 500); };
+    setTimeout(tentarParticipantes, 500);
+
     connectSSE();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply);
