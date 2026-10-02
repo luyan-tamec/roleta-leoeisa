@@ -181,7 +181,7 @@ function suave() {
         if (typeof pararAnimacaoRoleta === 'function') pararAnimacaoRoleta();
       }, 2000);
       destacar(i);
-      mostrarVencedor(vExibido);
+      mostrarVencedor(vExibido, i);
 
       if (nomeForcado) _consumirVencedorForcado();
     }
@@ -215,7 +215,12 @@ function atualizar() {
   nomes.forEach((nm, i) => {
     const d = document.createElement('div');
     d.className = 'tagNome';
-    d.innerHTML = `${nm} <button onclick="remover(${i})">×</button>`;
+    // textContent (não innerHTML): nomes vêm de CSV/TXT/chat/painel e não podem virar HTML
+    d.appendChild(document.createTextNode(nm + ' '));
+    const b = document.createElement('button');
+    b.textContent = '×';
+    b.addEventListener('click', () => remover(i));
+    d.appendChild(b);
     lista.appendChild(d);
   });
 }

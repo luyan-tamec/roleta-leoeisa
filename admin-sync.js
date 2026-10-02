@@ -1,43 +1,86 @@
-// admin-sync.js — v4
+// admin-sync.js — v5
 // Carrega configs do backend e aplica na roleta SEM precisar de F5.
 // SSE recebe updates em tempo real quando algo é salvo no painel.
+//
+// v5:
+//  - Atualização ao vivo da arena funciona (usa aplicarArenaConfig() do scrparena.js;
+//    antes fazia window.X = ..., que não altera variáveis `let` globais).
+//  - Volumes na mesma escala do backend/painel (0–1) → sliders 0–100.
+//  - Cada endpoint tem timeout e falha isolada (um erro não derruba os outros).
+//  - window.adminReady: promessa que resolve quando a 1ª sincronização termina;
+//    o scrparena/code-vote esperam por ela para conectar no canal certo da Twitch.
+//  - Reconexão do SSE refaz a sincronização (recupera eventos perdidos enquanto o
+//    Render estava dormindo/reiniciando).
+//  - Troca do canal da Twitch pelo painel reconecta chat da arena e votação.
+//  - adminRegistrarVencedor(): grava o vencedor no histórico do backend.
 
 const ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com"; // ← troque pela URL do Render
+const ADMIN_CANAL_PADRAO = "isaroza_";                          // usado até a config chegar do backend
+const ADMIN_TIMEOUT_MS = 60000;                                 // Render free pode levar ~50 s para acordar
 
 // ─── FETCH INICIAL ────────────────────────────────────────────────────────────
-async function syncAdmin() {
+async function _fetchAdmin(caminho) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ADMIN_TIMEOUT_MS);
   try {
-    const [cfgRes, arenaRes, sonsRes, imgRes, visRes, partRes, playlistRes] = await Promise.all([
-      fetch(`${ADMIN_BACKEND_URL}/api/config`),
-      fetch(`${ADMIN_BACKEND_URL}/api/arena`),
-      fetch(`${ADMIN_BACKEND_URL}/api/sons`),
-      fetch(`${ADMIN_BACKEND_URL}/api/imagens/bonecos`),
-      fetch(`${ADMIN_BACKEND_URL}/api/visual`),
-      fetch(`${ADMIN_BACKEND_URL}/api/participantes`),
-      fetch(`${ADMIN_BACKEND_URL}/api/musicas`),
-    ]);
-    const [cfg, arena, sons, imgs, vis, part, playlist] = await Promise.all([
-      cfgRes.json(), arenaRes.json(), sonsRes.json(),
-      imgRes.json(), visRes.json(), partRes.json(), playlistRes.json(),
-    ]);
-    if (cfg.ok)   sessionStorage.setItem("admin_config",        JSON.stringify(cfg.data));
-    if (arena.ok) sessionStorage.setItem("admin_arena",         JSON.stringify(arena.data));
-    if (sons.ok)  sessionStorage.setItem("admin_sons",          JSON.stringify(sons.data));
-    if (imgs.ok)  sessionStorage.setItem("admin_bonecos",       JSON.stringify(imgs.data));
-    if (vis.ok)   sessionStorage.setItem("admin_visual",        JSON.stringify(vis.data));
-    if (part.ok)  sessionStorage.setItem("admin_participantes", JSON.stringify(part.data));
-    if (playlist.ok) sessionStorage.setItem("admin_playlist",   JSON.stringify(playlist.data));
-    console.log("[admin-sync] ✅ Configs carregadas.");
+    const res = await fetch(`${ADMIN_BACKEND_URL}${caminho}`, { signal: ctrl.signal });
+    return await res.json();
   } catch (e) {
-    console.warn("[admin-sync] ⚠️ Backend offline, usando configs locais.", e.message);
+    console.warn(`[admin-sync] ⚠️ ${caminho} indisponível:`, e.message);
+    return null;
+  } finally {
+    clearTimeout(t);
   }
 }
 
+async function syncAdmin() {
+  const [cfg, arena, sons, imgs, vis, part, playlist, filmes] = await Promise.all([
+    _fetchAdmin("/api/config"),
+    _fetchAdmin("/api/arena"),
+    _fetchAdmin("/api/sons"),
+    _fetchAdmin("/api/imagens/bonecos"),
+    _fetchAdmin("/api/visual"),
+    _fetchAdmin("/api/participantes"),
+    _fetchAdmin("/api/musicas"),
+    _fetchAdmin("/api/filmes/config"),
+  ]);
+  const guardar = (chave, res) => {
+    if (!res || !res.ok) return false;
+    try { sessionStorage.setItem(chave, JSON.stringify(res.data)); } catch (_) {}
+    return true;
+  };
+  const ok = [
+    guardar("admin_config",        cfg),
+    guardar("admin_arena",         arena),
+    guardar("admin_sons",          sons),
+    guardar("admin_bonecos",       imgs),
+    guardar("admin_visual",        vis),
+    guardar("admin_participantes", part),
+    guardar("admin_playlist",      playlist),
+    guardar("admin_filmes",        filmes),
+  ].filter(Boolean).length;
+  if (ok) console.log(`[admin-sync] ✅ ${ok}/8 configs carregadas.`);
+  else    console.warn("[admin-sync] ⚠️ Backend offline, usando configs locais.");
+}
+
+// Promessa que nunca rejeita: resolve quando a 1ª sincronização termina (com ou sem sucesso).
+window.adminReady = syncAdmin().catch(e => console.warn("[admin-sync] sync:", e.message));
+
 // ─── SSE ─────────────────────────────────────────────────────────────────────
+let _sseCaiu = false;
 function connectSSE() {
   const sse = new EventSource(`${ADMIN_BACKEND_URL}/api/events`);
 
+  // Se a conexão tinha caído, refaz a sincronização (eventos enviados nesse meio-tempo foram perdidos).
+  sse.onopen = () => {
+    if (!_sseCaiu) return;
+    _sseCaiu = false;
+    console.log("[admin-sync] 🔄 SSE reconectado — ressincronizando.");
+    syncAdmin().then(aplicarTudo);
+  };
+
   sse.addEventListener("config",          e => { sessionStorage.setItem("admin_config",        e.data); applyConfig(JSON.parse(e.data)); });
+  sse.addEventListener("filmes",          e => { sessionStorage.setItem("admin_filmes",        e.data); });
   sse.addEventListener("sons",            e => { sessionStorage.setItem("admin_sons",          e.data); applySons(JSON.parse(e.data)); });
   sse.addEventListener("arena",           e => { sessionStorage.setItem("admin_arena",         e.data); applyArena(JSON.parse(e.data)); });
   sse.addEventListener("visual",          e => { sessionStorage.setItem("admin_visual",        e.data); applyVisual(JSON.parse(e.data)); });
@@ -70,7 +113,7 @@ function connectSSE() {
   sse.addEventListener("arena_limpar",    () => { limparArena(); });
   sse.addEventListener("reload",          () => { location.reload(); });
 
-  sse.onerror = () => { sse.close(); setTimeout(connectSSE, 5000); };
+  sse.onerror = () => { _sseCaiu = true; sse.close(); setTimeout(connectSSE, 5000); };
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -81,6 +124,23 @@ function adminGetBonecos()       { return JSON.parse(sessionStorage.getItem("adm
 function adminGetVisual()        { return JSON.parse(sessionStorage.getItem("admin_visual")        || "null"); }
 function adminGetParticipantes() { return JSON.parse(sessionStorage.getItem("admin_participantes") || "null"); }
 function adminGetPlaylist()      { return JSON.parse(sessionStorage.getItem("admin_playlist")      || "null"); }
+function adminGetFilmes()        { return JSON.parse(sessionStorage.getItem("admin_filmes")        || "null"); }
+
+// Canal da Twitch vigente (config do painel → padrão). Usado por arena, votação e chat.
+function adminGetCanal() {
+  const cfg = adminGetConfig();
+  return ((cfg && cfg.channelName) || ADMIN_CANAL_PADRAO).replace(/^#/, "").toLowerCase();
+}
+
+// Grava o vencedor no histórico do painel (POST público, limitado por IP no backend).
+function adminRegistrarVencedor(nome, item) {
+  if (!nome) return;
+  fetch(`${ADMIN_BACKEND_URL}/api/historico`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nome: String(nome), item: item ? String(item) : "" }),
+  }).catch(() => { /* backend fora do ar: não bloqueia a roleta */ });
+}
 
 // ─── APPLY CONFIG ─────────────────────────────────────────────────────────────
 function applyConfig(cfg) {
@@ -112,6 +172,11 @@ function applyConfig(cfg) {
     const el = document.getElementById("checkTemaRotar");
     if (el) el.checked = cfg.temaAutoRotar;
   }
+  // Canal da Twitch alterado no painel → reconecta chat da arena e votação (sem F5)
+  if (cfg.channelName) {
+    if (typeof mudarCanalTwitch === "function")   mudarCanalTwitch(cfg.channelName);
+    if (typeof mudarCanalVotacao === "function")  mudarCanalVotacao(cfg.channelName);
+  }
 }
 
 // ─── APPLY SONS ───────────────────────────────────────────────────────────────
@@ -120,13 +185,13 @@ function applySons(sons) {
   if (!sons) return;
   if (typeof sons.volumeMusica === "number") {
     localStorage.setItem("r1_volumeMusica", sons.volumeMusica);
-    const el = document.getElementById("volumeMusica");
-    if (el) { el.value = Math.round(sons.volumeMusica * 10); el.dispatchEvent(new Event("input")); }
+    const el = document.getElementById("volumeMusica"); // slider 0–100
+    if (el) { el.value = Math.round(sons.volumeMusica * 100); el.dispatchEvent(new Event("input")); }
   }
   if (typeof sons.volumeTick === "number") {
     localStorage.setItem("r1_volumeTick", sons.volumeTick);
-    const el = document.getElementById("volTick");
-    if (el) { el.value = Math.round(sons.volumeTick * 10); el.dispatchEvent(new Event("input")); }
+    const el = document.getElementById("volTick"); // slider 0–100
+    if (el) { el.value = Math.round(sons.volumeTick * 100); el.dispatchEvent(new Event("input")); }
   }
   if (typeof sons.musicaSelecionada === "number") {
     const el = document.getElementById("sons");
@@ -142,34 +207,12 @@ function applySons(sons) {
 function applyArena(arena) {
   arena = arena || adminGetArena();
   if (!arena) return;
-  if (arena.userCooldown   != null && typeof USER_COOLDOWN    !== "undefined") window.USER_COOLDOWN    = arena.userCooldown;
-  if (arena.globalCooldown != null && typeof GLOBAL_COOLDOWN  !== "undefined") window.GLOBAL_COOLDOWN  = arena.globalCooldown;
-  if (arena.maxBonecos     != null && typeof MAX_BONECOS      !== "undefined") window.MAX_BONECOS      = arena.maxBonecos;
-  if (arena.comando        != null && typeof COMANDO_ENTRAR   !== "undefined") window.COMANDO_ENTRAR   = arena.comando;
-  if (arena.escala         != null && typeof ESCALA_BONECO    !== "undefined") window.ESCALA_BONECO    = arena.escala;
-  if (arena.velocidade     != null && typeof VEL_MULTIPLICADOR !== "undefined") window.VEL_MULTIPLICADOR = arena.velocidade;
-  if (arena.tempoVida      != null && typeof TEMPO_VIDA       !== "undefined") window.TEMPO_VIDA       = arena.tempoVida * 1000;
-  if (arena.animEntrada    != null && typeof ANIM_ENTRADA     !== "undefined") window.ANIM_ENTRADA     = arena.animEntrada;
-  if (arena.nomeCores      != null && typeof NOME_COR_MODO    !== "undefined") window.NOME_COR_MODO    = arena.nomeCores;
-  if (arena.nomeCorFixa    != null && typeof NOME_COR_FIXA    !== "undefined") window.NOME_COR_FIXA    = arena.nomeCorFixa;
-  if (arena.nomePaleta     != null && typeof NOME_PALETA      !== "undefined") window.NOME_PALETA      = arena.nomePaleta;
-  if (arena.nomeFonte      != null && typeof NOME_FONTE       !== "undefined") window.NOME_FONTE       = arena.nomeFonte;
-  if (arena.nomeTamanho    != null && typeof NOME_TAMANHO     !== "undefined") window.NOME_TAMANHO     = arena.nomeTamanho;
 
-  if (arena.posicaoBoneco) {
-    const el = document.getElementById("arena");
-    if (el) {
-      if (arena.posicaoBoneco === "frente")     el.style.zIndex = "999";
-      if (arena.posicaoBoneco === "atras")      el.style.zIndex = "-2";
-      if (arena.posicaoBoneco === "desativado") el.style.zIndex = "-3";
-    }
-  }
-  if (typeof arena.modoTeste === "boolean" && typeof MODO_TESTE !== "undefined") {
-    window.MODO_TESTE = arena.modoTeste;
-    if (arena.testeIntervalo != null && typeof TESTE_INTERVALO !== "undefined")
-      window.TESTE_INTERVALO = arena.testeIntervalo * 1000;
-    _atualizarModoteste();
-  }
+  // As variáveis da arena são `let` globais do scrparena.js. Atribuir window.X = ... NÃO
+  // as altera (cria uma propriedade separada), então o scrparena.js expõe um setter.
+  if (typeof aplicarArenaConfig === "function") aplicarArenaConfig(arena);
+
+  if (typeof arena.modoTeste === "boolean") _atualizarModoteste();
 }
 
 // ─── APPLY VISUAL ─────────────────────────────────────────────────────────────
@@ -185,8 +228,8 @@ function applyVisual(vis) {
 
 // ─── APPLY BONECOS ────────────────────────────────────────────────────────────
 function applyBonecos(bonecos) {
-  if (typeof BONECOS_REMOTE !== "undefined" && Array.isArray(bonecos)) {
-    window.BONECOS_REMOTE = bonecos.length > 0 ? bonecos : null;
+  if (typeof definirBonecosRemotos === "function" && Array.isArray(bonecos)) {
+    definirBonecosRemotos(bonecos);
   }
 }
 
@@ -284,6 +327,13 @@ function applyImagens(slots) {
   }
 }
 
+// Monta url('...') seguro para CSS (escapa aspas, parênteses, barras e espaços).
+function _cssUrl(u) {
+  // encodeURIComponent NÃO escapa ' ( ) — por isso o percent-encode manual.
+  const pct = c => "%" + c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0");
+  return `url("${String(u).replace(/["'()\\\s]/g, pct)}")`;
+}
+
 function _applyImageSlots(slots) {
   if (slots.centro) {
     const el = document.querySelector(".centro");
@@ -292,17 +342,17 @@ function _applyImageSlots(slots) {
   }
   if (slots.leoeisa) {
     _injectStyle("admin-leoeisa",
-      `body::before { background: url('${slots.leoeisa}') center/cover no-repeat !important; }`
+      `body::before { background: ${_cssUrl(slots.leoeisa)} center/cover no-repeat !important; }`
     );
   }
   if (slots.back) {
     _injectStyle("admin-back",
-      `body.painel-oculto::before { background-image: url('${slots.back}') !important; }`
+      `body.painel-oculto::before { background-image: ${_cssUrl(slots.back)} !important; }`
     );
   }
   if (slots.gato1) {
     _injectStyle("admin-gato1",
-      `.centrochat { background-image: url('${slots.gato1}') !important; }`
+      `.centrochat { background-image: ${_cssUrl(slots.gato1)} !important; }`
     );
   }
   if (slots.will) {
@@ -335,33 +385,37 @@ function _atualizarModoteste() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-syncAdmin().then(() => {
-  // Cada etapa isolada em try/catch: script.js/script3.js podem ainda não ter
-  // terminado de rodar quando a API responde rápido demais (variáveis como
-  // `musicas`/`nomes` existem mas ainda não foram inicializadas — TDZ). Sem o
-  // isolamento, um erro numa etapa derrubava todas as seguintes.
-  const seguro = (fn, nome) => {
-    try { fn(); } catch (e) { console.warn(`[admin-sync] ⚠️ Falha em ${nome}, tentando de novo em breve:`, e.message); return false; }
-    return true;
-  };
+// Cada etapa isolada em try/catch: script.js/script3.js podem ainda não ter
+// terminado de rodar quando a API responde rápido demais (variáveis como
+// `musicas`/`nomes` existem mas ainda não foram inicializadas — TDZ). Sem o
+// isolamento, um erro numa etapa derrubava todas as seguintes.
+function _seguro(fn, nome) {
+  try { fn(); } catch (e) { console.warn(`[admin-sync] ⚠️ Falha em ${nome}, tentando de novo em breve:`, e.message); return false; }
+  return true;
+}
 
-  const apply = () => {
-    seguro(applyConfig, "applyConfig");
-    seguro(applySons, "applySons");
-    seguro(applyArena, "applyArena");
-    seguro(applyVisual, "applyVisual");
-    seguro(applyImagens, "applyImagens");
+function aplicarTudo() {
+  _seguro(applyConfig, "applyConfig");
+  _seguro(applySons, "applySons");
+  _seguro(applyArena, "applyArena");
+  _seguro(applyVisual, "applyVisual");
+  _seguro(applyImagens, "applyImagens");
+  _seguro(() => applyBonecos(adminGetBonecos()), "applyBonecos");
 
-    // Playlist e participantes dependem de variáveis (`musicas`, `select`, `nomes`)
-    // definidas em script.js/script3.js — damos uma folga e tentamos de novo se
-    // ainda não estiverem prontas.
-    const tentarPlaylist = () => { if (!seguro(applyPlaylist, "applyPlaylist")) setTimeout(tentarPlaylist, 500); };
-    setTimeout(tentarPlaylist, 300);
-    const tentarParticipantes = () => { if (!seguro(applyParticipantes, "applyParticipantes")) setTimeout(tentarParticipantes, 500); };
-    setTimeout(tentarParticipantes, 500);
+  // Playlist e participantes dependem de variáveis (`musicas`, `select`, `nomes`)
+  // definidas em script.js/script3.js — damos uma folga e tentamos de novo se
+  // ainda não estiverem prontas.
+  const tentarPlaylist = () => { if (!_seguro(applyPlaylist, "applyPlaylist")) setTimeout(tentarPlaylist, 500); };
+  setTimeout(tentarPlaylist, 300);
+  const tentarParticipantes = () => { if (!_seguro(applyParticipantes, "applyParticipantes")) setTimeout(tentarParticipantes, 500); };
+  setTimeout(tentarParticipantes, 500);
+}
 
-    connectSSE();
-  };
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply);
-  else apply();
+// Aplica só depois do evento `load`: os scripts com `defer` (script.js … scrparena.js)
+// já rodaram, então setters e globais existem. Antes, o `apply` podia disparar com o
+// documento em "interactive" e antes desses scripts — e a config simplesmente se perdia.
+window.adminReady.then(() => {
+  const iniciar = () => { aplicarTudo(); connectSSE(); };
+  if (document.readyState === "complete") iniciar();
+  else window.addEventListener("load", iniciar, { once: true });
 });

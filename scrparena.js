@@ -39,34 +39,33 @@ let BONECOS_LIST = [
 ];
 let BONECOS_REMOTE = null;
 
-const _cfg   = (typeof adminGetConfig  === "function") ? adminGetConfig()  : null;
-const _arena = (typeof adminGetArena   === "function") ? adminGetArena()   : null;
+// ── Valores padrão (a config do painel sobrescreve via aplicarArenaConfig) ──
+const CANAL_PADRAO = "isaroza_";
 
 // Twitch
-let COMANDO_ENTRAR  = _arena?.comando        ?? "!entrar";
-const channelName   = _cfg?.channelName      ?? "isaroza_";
+let COMANDO_ENTRAR  = "!entrar";
 
 // Cooldowns
-let USER_COOLDOWN   = _arena?.userCooldown   ?? 15000;
-let GLOBAL_COOLDOWN = _arena?.globalCooldown ?? 5000;
-let MAX_BONECOS     = _arena?.maxBonecos     ?? 30;
+let USER_COOLDOWN   = 15000;
+let GLOBAL_COOLDOWN = 5000;
+let MAX_BONECOS     = 30;
 
 // Visual
-let ESCALA_BONECO     = _arena?.escala      ?? 1.0;
-let VEL_MULTIPLICADOR = _arena?.velocidade  ?? 1.0;
-let TEMPO_VIDA        = (_arena?.tempoVida  ?? 0) * 1000; // ms (0 = infinito)
-let ANIM_ENTRADA      = _arena?.animEntrada ?? "normal";
+let ESCALA_BONECO     = 1.0;
+let VEL_MULTIPLICADOR = 1.0;
+let TEMPO_VIDA        = 0;        // ms (0 = infinito)
+let ANIM_ENTRADA      = "normal";
 
 // Nomes
-let NOME_COR_MODO = _arena?.nomeCores    ?? "aleatorio";
-let NOME_COR_FIXA = _arena?.nomeCorFixa  ?? "#ffffff";
-let NOME_PALETA   = _arena?.nomePaleta   ?? [];
-let NOME_FONTE    = _arena?.nomeFonte    ?? "Arial";
-let NOME_TAMANHO  = _arena?.nomeTamanho  ?? 13;
+let NOME_COR_MODO = "aleatorio";
+let NOME_COR_FIXA = "#ffffff";
+let NOME_PALETA   = [];
+let NOME_FONTE    = "Arial";
+let NOME_TAMANHO  = 13;
 
 // Modo teste
-let MODO_TESTE     = _arena?.modoTeste      ?? false;
-let TESTE_INTERVALO= (_arena?.testeIntervalo ?? 3) * 1000;
+let MODO_TESTE      = false;
+let TESTE_INTERVALO = 3000;
 
 const PALETA_PADRAO = [
     "#ff6b9d","#c084fc","#67e8f9","#86efac","#fde68a",
@@ -74,18 +73,48 @@ const PALETA_PADRAO = [
     "#f472b6","#facc15","#4ade80","#38bdf8","#e879f9",
 ];
 
-// Bonecos remotos
-const _bonemosAdmin = (typeof adminGetBonecos === "function") ? adminGetBonecos() : null;
-if (_bonemosAdmin && _bonemosAdmin.length > 0) BONECOS_REMOTE = _bonemosAdmin;
+/**
+ * Aplica a config da arena vinda do backend (cache do sessionStorage no load e SSE ao vivo).
+ * Vive AQUI porque as variáveis acima são `let` globais deste script: o admin-sync.js não
+ * consegue alterá-las com `window.X = ...` (isso cria outra propriedade e o código continua
+ * enxergando o valor antigo) — por isso ele chama esta função.
+ */
+function aplicarArenaConfig(a) {
+    if (!a) return;
+    if (a.comando        != null) COMANDO_ENTRAR    = a.comando;
+    if (a.userCooldown   != null) USER_COOLDOWN     = a.userCooldown;
+    if (a.globalCooldown != null) GLOBAL_COOLDOWN   = a.globalCooldown;
+    if (a.maxBonecos     != null) MAX_BONECOS       = a.maxBonecos;
+    if (a.escala         != null) ESCALA_BONECO     = a.escala;
+    if (a.velocidade     != null) VEL_MULTIPLICADOR = a.velocidade;
+    if (a.tempoVida      != null) TEMPO_VIDA        = a.tempoVida * 1000;
+    if (a.animEntrada    != null) ANIM_ENTRADA      = a.animEntrada;
+    if (a.nomeCores      != null) NOME_COR_MODO     = a.nomeCores;
+    if (a.nomeCorFixa    != null) NOME_COR_FIXA     = a.nomeCorFixa;
+    if (a.nomePaleta     != null) NOME_PALETA       = a.nomePaleta;
+    if (a.nomeFonte      != null) NOME_FONTE        = a.nomeFonte;
+    if (a.nomeTamanho    != null) NOME_TAMANHO      = a.nomeTamanho;
+    if (typeof a.modoTeste === "boolean") MODO_TESTE = a.modoTeste;
+    if (a.testeIntervalo != null) TESTE_INTERVALO   = a.testeIntervalo * 1000;
 
-// Posição via backend
-if (_arena?.posicaoBoneco) {
-    const el  = document.getElementById("arena");
-    const sel = document.getElementById("indexboneco");
-    if (_arena.posicaoBoneco === "frente")     { if (el) el.style.zIndex = "999";  if (sel) sel.value = "z-index: 999;"; }
-    if (_arena.posicaoBoneco === "atras")      { if (el) el.style.zIndex = "-2";   if (sel) sel.value = "z-index:-2;"; }
-    if (_arena.posicaoBoneco === "desativado") { if (el) el.style.zIndex = "-3";   if (sel) sel.value = "z-index:-3;"; }
+    // Posição (z-index) da arena + seletor manual sincronizado
+    if (a.posicaoBoneco) {
+        const el  = document.getElementById("arena");
+        const sel = document.getElementById("indexboneco");
+        if (a.posicaoBoneco === "frente")     { if (el) el.style.zIndex = "999"; if (sel) sel.value = "z-index: 999;"; }
+        if (a.posicaoBoneco === "atras")      { if (el) el.style.zIndex = "-2";  if (sel) sel.value = "z-index:-2;"; }
+        if (a.posicaoBoneco === "desativado") { if (el) el.style.zIndex = "-3";  if (sel) sel.value = "z-index:-3;"; }
+    }
 }
+
+// Bonecos enviados pelo painel (Supabase Storage). Lista vazia → volta aos bonecos locais.
+function definirBonecosRemotos(lista) {
+    BONECOS_REMOTE = (Array.isArray(lista) && lista.length > 0) ? lista : null;
+}
+
+// Config já em cache (sessionStorage) no momento do load
+aplicarArenaConfig((typeof adminGetArena === "function") ? adminGetArena() : null);
+definirBonecosRemotos((typeof adminGetBonecos === "function") ? adminGetBonecos() : null);
 
 /* ========================================== */
 
@@ -99,18 +128,41 @@ const pos_bonecos = document.getElementById("indexboneco");
 pos_bonecos.addEventListener("change", () => { arena.style = `${pos_bonecos.value}`; });
 
 /* ── Twitch TMI ── */
-const client = new tmi.Client({
-    connection: { secure: true, reconnect: true },
-    channels: [channelName]
-});
-client.connect();
+// O canal vem da config do painel. Se ela ainda não chegou (1ª carga da sessão), esperamos
+// até 4 s pela sincronização antes de conectar — assim não entramos no canal errado.
+// Se o canal mudar depois (painel/SSE), mudarCanalTwitch() reconecta.
+let twitchClient = null;
+let canalTwitch  = null;
 
-client.on("message", (channel, tags, message, self) => {
-    if (self) return;
-    if (message.trim().toLowerCase() === COMANDO_ENTRAR.toLowerCase()) {
-        handleJoin(tags["display-name"]);
-    }
-});
+function conectarTwitch(canal) {
+    canal = String(canal || "").replace(/^#/, "").toLowerCase();
+    if (!canal || canal === canalTwitch) return;
+
+    if (twitchClient) { try { twitchClient.disconnect(); } catch (_) {} }
+    canalTwitch = canal;
+    twitchClient = new tmi.Client({
+        connection: { secure: true, reconnect: true },
+        channels: [canal]
+    });
+    twitchClient.on("message", (channel, tags, message, self) => {
+        if (self) return;
+        if (message.trim().toLowerCase() === COMANDO_ENTRAR.toLowerCase()) {
+            handleJoin(tags["display-name"] || tags.username);
+        }
+    });
+    twitchClient.connect().catch(e => console.warn("[arena] Twitch:", e));
+    console.log(`[arena] Conectando ao chat de #${canal}`);
+}
+function mudarCanalTwitch(canal) { conectarTwitch(canal); }
+
+(function iniciarTwitch() {
+    const canalDaConfig = () =>
+        (typeof adminGetCanal === "function") ? adminGetCanal() : CANAL_PADRAO;
+    const pronto = window.adminReady
+        ? Promise.race([window.adminReady, new Promise(r => setTimeout(r, 4000))])
+        : Promise.resolve();
+    pronto.then(() => conectarTwitch(canalDaConfig()));
+})();
 
 /* ── Lógica principal ── */
 function handleJoin(username, forcado = false) {

@@ -6,7 +6,7 @@
   <title>Roleta Rindo e Apoiando!</title>
   <link rel="stylesheet" href="styles/style.css">
   <link rel="stylesheet" href="styles/stylearena.css">
-  <link rel="stylesheet" href="styles/code-vote.css"
+  <link rel="stylesheet" href="styles/code-vote.css">
   <link rel="stylesheet" href="styles/search.css">
   <link rel="shortcut icon" href="img/will.png" type="image/x-icon">
 </head>
@@ -23,34 +23,40 @@
       <div id="videos"></div>
     </div>
     <script>
-      const apiKey = "AIzaSyB1wkiHkuvoxQ-C48-_8ZIAuyVsHqMvtgE";
-
-      function buscarVideos() {
-        const busca = document.getElementById("busca").value;
-        const resultado = busca.replace(/\s+/g, "+");
-        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${resultado}&key=${apiKey}&maxResults=10`)
-          .then(res => res.json())
-          .then(data => {
-            const div = document.getElementById("videos");
-            div.innerHTML = "";
-            data.items.forEach(video => {
-              const cartao = document.createElement("div");
-              cartao.classList.add("cartao-video");
-              const videoId = video.id.videoId;
-              const iframe = document.createElement("iframe");
-              iframe.width = "100%";
-              iframe.height = "300";
-              iframe.src = `https://www.youtube.com/embed/${videoId}`;
-              iframe.frameBorder = "0";
-              iframe.allowFullscreen = true;
-              const title = document.createElement("p");
-              title.textContent = video.snippet.title;
-              cartao.appendChild(iframe);
-              cartao.appendChild(title);
-              div.appendChild(cartao);
-            });
+      // A busca passa pelo backend (/api/youtube/search): a chave da API fica no servidor
+      // (variável YOUTUBE_API_KEY no Render) e não mais exposta neste HTML público.
+      async function buscarVideos() {
+        const termo = document.getElementById("busca").value.trim();
+        const div = document.getElementById("videos");
+        if (!termo) return;
+        if (typeof ADMIN_BACKEND_URL === "undefined") { div.textContent = "Backend não configurado."; return; }
+        div.textContent = "Buscando…";
+        try {
+          const res = await fetch(`${ADMIN_BACKEND_URL}/api/youtube/search?q=${encodeURIComponent(termo)}`);
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Erro na busca");
+          div.innerHTML = "";
+          if (!data.items.length) { div.textContent = "Nenhum vídeo encontrado."; return; }
+          data.items.forEach(video => {
+            const cartao = document.createElement("div");
+            cartao.classList.add("cartao-video");
+            const iframe = document.createElement("iframe");
+            iframe.width = "100%";
+            iframe.height = "300";
+            iframe.src = `https://www.youtube.com/embed/${encodeURIComponent(video.id)}`;
+            iframe.frameBorder = "0";
+            iframe.allowFullscreen = true;
+            const title = document.createElement("p");
+            title.textContent = video.title;
+            cartao.appendChild(iframe);
+            cartao.appendChild(title);
+            div.appendChild(cartao);
           });
+        } catch (e) {
+          div.textContent = "Não foi possível buscar: " + e.message;
+        }
       }
+      document.getElementById("busca").addEventListener("keydown", e => { if (e.key === "Enter") buscarVideos(); });
 
       const menu = document.getElementById("menu");
       function toggleMenu() {
@@ -147,11 +153,11 @@
 
             <label style="display:flex;align-items:center;gap:6px;color:#ccc;">
               🔊vol.musica
-              <input type="range" id="volumeMusica" min="0" max="10" value="1" style="width:120px;">
+              <input type="range" id="volumeMusica" min="0" max="100" value="10" style="width:120px;">
             </label>
             <label style="display:flex;align-items:center;gap:6px;color:#ccc; letter-spacing: 3px;">
               🔔vol.seta
-              <input type="range" id="volTick" min="0" max="10" value="10" style="width:120px;">
+              <input type="range" id="volTick" min="0" max="100" value="12" style="width:120px;">
             </label>
 
             <div id="vote-widget" class="votos-widget">

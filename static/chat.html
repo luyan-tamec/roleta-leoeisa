@@ -86,57 +86,91 @@
     <script src="../tmi.min.js"></script>
     <script>
 
-        const canal = "isaroza_";
+        // Canal: ?canal=nome na URL do OBS → senão o canal configurado no painel → senão o padrão.
+        const BACKEND_URL = "https://roleta-admin.onrender.com"; // mesma URL do admin-sync.js
+        const CANAL_PADRAO = "isaroza_";
 
-        const client = new tmi.Client({
-            connection: { reconnect: true, secure: true },
-            channels: [canal]
+        const normalizaCanal = c => String(c || "").replace(/^#/, "").trim().toLowerCase();
+
+        async function descobrirCanal() {
+            const daUrl = normalizaCanal(new URLSearchParams(location.search).get("canal"));
+            if (daUrl) return daUrl;
+            try {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), 4000); // não trava se o Render estiver dormindo
+                const res = await fetch(`${BACKEND_URL}/api/config`, { signal: ctrl.signal });
+                clearTimeout(t);
+                const json = await res.json();
+                const canal = normalizaCanal(json.ok && json.data && json.data.channelName);
+                if (canal) return canal;
+            } catch (_) { /* usa o padrão */ }
+            return CANAL_PADRAO;
+        }
+
+        descobrirCanal().then(canal => {
+            const client = new tmi.Client({
+                connection: { reconnect: true, secure: true },
+                channels: [canal]
+            });
+            client.connect();
+            client.on("message", (channel, tags, message, self) => {
+                addMessage(tags["display-name"] || tags.username || "?", message, tags.emotes);
+            });
         });
 
-        client.connect();
-
-        client.on("message", (channel, tags, message, self) => {
-            addMessage(tags["display-name"], message);
-        });
-
-        function addMessage(username, message) {
+        // Tudo é montado com textContent/DOM — nada do chat (nome ou mensagem) vira HTML.
+        // (Antes: innerHTML com usuário e mensagem crus → qualquer chatter injetava HTML/JS no overlay.)
+        function addMessage(username, message, emotes) {
             const chatBox = document.getElementById("chat-box");
 
             const msgDiv = document.createElement("div");
             msgDiv.className = "msg";
 
-            msgDiv.innerHTML = `
-        <span class="username">${username}:</span>
-        <span class="text">${convertEmotes(message)}</span>
-    `;
+            const user = document.createElement("span");
+            user.className = "username";
+            user.textContent = username + ":";
 
+            const text = document.createElement("span");
+            text.className = "text";
+            renderMensagem(text, message, emotes);
+
+            msgDiv.appendChild(user);
+            msgDiv.appendChild(text);
             chatBox.prepend(msgDiv);
-
 
             if (chatBox.children.length > 25) {
                 chatBox.removeChild(chatBox.lastChild);
             }
         }
 
+        // Usa as posições de emotes que a própria Twitch envia (tags.emotes) — cobre TODOS os
+        // emotes, não só 4 fixos. As posições contam caracteres Unicode, por isso Array.from.
+        function renderMensagem(alvo, message, emotes) {
+            const chars = Array.from(message);
+            const trechos = [];
+            if (emotes) {
+                for (const [id, posicoes] of Object.entries(emotes)) {
+                    if (!/^\w+$/.test(id)) continue;
+                    for (const pos of posicoes) {
+                        const [ini, fim] = pos.split("-").map(Number);
+                        if (Number.isInteger(ini) && Number.isInteger(fim)) trechos.push({ ini, fim, id });
+                    }
+                }
+            }
+            trechos.sort((a, b) => a.ini - b.ini);
 
-
-        function convertEmotes(message) {
-            return message
-                .split(" ")
-                .map(word => {
-
-                    const emotes = {
-                        "Kappa": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0",
-                        "PogChamp": "https://static-cdn.jtvnw.net/emoticons/v2/88/default/dark/1.0",
-                        "LUL": "https://static-cdn.jtvnw.net/emoticons/v2/425618/default/dark/1.0",
-                        "BibleThump": "https://static-cdn.jtvnw.net/emoticons/v2/86/default/dark/1.0"
-                    };
-
-                    return emotes[word]
-                        ? `<img class="emote" src="${emotes[word]}">`
-                        : word;
-                })
-                .join(" ");
+            let cursor = 0;
+            for (const t of trechos) {
+                if (t.ini < cursor) continue;
+                if (t.ini > cursor) alvo.appendChild(document.createTextNode(chars.slice(cursor, t.ini).join("")));
+                const img = document.createElement("img");
+                img.className = "emote";
+                img.alt = chars.slice(t.ini, t.fim + 1).join("");
+                img.src = `https://static-cdn.jtvnw.net/emoticons/v2/${t.id}/default/dark/1.0`;
+                alvo.appendChild(img);
+                cursor = t.fim + 1;
+            }
+            if (cursor < chars.length) alvo.appendChild(document.createTextNode(chars.slice(cursor).join("")));
         }
 
     </script>

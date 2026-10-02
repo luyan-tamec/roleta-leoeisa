@@ -57,11 +57,13 @@ function playTick() {
   } catch (e) { }
 }
 
+// Sliders de volume vão de 0 a 100 (%), valores internos de 0 a 1 — a mesma escala do
+// backend/painel. (Antes: música ÷100 com slider 0–10 e tick ÷300 → volume máximo de 10% / 3%.)
 const sliderTick = document.getElementById('volTick');
 if (sliderTick) {
   sliderTick.value = Math.round(volumeTick * 100);
   sliderTick.oninput = e => {
-    volumeTick = Math.max(0, Math.min(1, e.target.value / 300));
+    volumeTick = Math.max(0, Math.min(1, e.target.value / 100));
     localStorage.setItem(PREFIX + 'volumeTick', volumeTick);
   };
 }
@@ -138,8 +140,8 @@ setInterval(() => {
   inputTempo.max = musica.duration;
 }, 1000);
 
-const volSalvo = localStorage.getItem(PREFIX + 'volumeMusica');
-if (volSalvo) musica.volume = parseFloat(volSalvo);
+const volSalvo = parseFloat(localStorage.getItem(PREFIX + 'volumeMusica'));
+musica.volume = isNaN(volSalvo) ? 0.1 : Math.max(0, Math.min(1, volSalvo)); // padrão 10%, igual ao backend
 document.getElementById('volumeMusica').value = Math.round(musica.volume * 100);
 
 document.getElementById('btnMusica').onclick = () => {

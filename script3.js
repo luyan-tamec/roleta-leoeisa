@@ -80,7 +80,7 @@ function salvarVencedores() {
   atualizarVencedores();
 }
 
-function mostrarVencedor(nm) {
+function mostrarVencedor(nm, idxSorteado) {
   overlay.textContent = `🎉✨🎈 ${nm} 🎉✨🎈 `;
   overlay.classList.remove('mostrar');
   void overlay.offsetWidth;
@@ -98,10 +98,16 @@ function mostrarVencedor(nm) {
   vencedores.push(nm);
   salvarVencedores();
 
-  // Remover vencedor automaticamente se opção ativada
+  // Registra no histórico do painel (o backend tem a aba "Histórico", mas a roleta nunca gravava nela)
+  if (typeof adminRegistrarVencedor === "function") adminRegistrarVencedor(nm);
+
+  // Remover vencedor automaticamente se opção ativada.
+  // Remove o nome anunciado; se ele não estiver na roleta (ex.: vencedor pré-definido do painel),
+  // remove a fatia que realmente parou na seta — antes nada era removido nesse caso.
   const autoRemover = document.getElementById('checkAutoRemover');
   if (autoRemover && autoRemover.checked) {
-    const idx = nomes.lastIndexOf(nm);
+    let idx = nomes.lastIndexOf(nm);
+    if (idx === -1 && Number.isInteger(idxSorteado) && idxSorteado >= 0 && idxSorteado < nomes.length) idx = idxSorteado;
     if (idx !== -1) {
       nomes.splice(idx, 1);
       cores.splice(idx, 1);
@@ -285,8 +291,10 @@ document.getElementById('btnLimparVencedores').onclick = () => {
 };
 const adicao = document.getElementById("btnAdicionar")
 
+// Enter só adiciona quando o foco está nos campos de nome/quantidade
+// (antes disparava em qualquer lugar: busca do YouTube, filtros e modais mostravam "Digite um nome.").
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') adicionar();
+  if (e.key === 'Enter' && (e.target === nome || e.target === qtd)) adicionar();
 });
 
 
@@ -318,25 +326,41 @@ carregar();
 
 // ===== IMPORTAR FILMES DA API =====
 
+const FILMES_API_PADRAO = "https://cinevote.onrender.com/filmes";
+
+// Usa a apiUrl configurada no painel (aba Filmes); se falhar, tenta o proxy do backend
+// e, na falta de config, a URL padrão. Aceita tanto `[...]` quanto `{ movies: [...] }`.
+async function buscarListaFilmes() {
+  const cfg = (typeof adminGetFilmes === "function" && adminGetFilmes()) || {};
+  const urls = [cfg.apiUrl || FILMES_API_PADRAO];
+  if (typeof ADMIN_BACKEND_URL !== "undefined" && cfg.apiUrl) urls.push(`${ADMIN_BACKEND_URL}/api/filmes/proxy`);
+
+  let ultimoErro = new Error("nenhuma fonte de filmes disponível");
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const data = json.movies || json;
+      if (Array.isArray(data)) return data;
+      ultimoErro = new Error("resposta inesperada do servidor");
+      console.error("Resposta recebida:", json);
+    } catch (e) {
+      ultimoErro = e;
+    }
+  }
+  throw ultimoErro;
+}
+
 async function abrirModalFilmes() {
   let filmes = [];
 
   try {
-    const res = await fetch("https://cinevote.onrender.com/filmes");
-    const json = await res.json();
-    const data = json.movies || json;
-
-    if (!Array.isArray(data)) {
-      btn.textContent = "🎬 Importar Filmes";
-      btn.disabled = false;
-      alert("Erro: resposta inesperada do servidor. Tente novamente.");
-      console.error("Resposta recebida:", json);
-      return;
-    }
-
-    filmes = data;
+    filmes = await buscarListaFilmes();
   } catch (e) {
-    alert("Erro ao buscar filmes. Verifique a conexão.");
+    // (antes, o ramo de "resposta inesperada" usava uma variável `btn` inexistente e quebrava)
+    console.error("Erro ao buscar filmes:", e);
+    alert("Erro ao buscar filmes. Verifique a conexão. Tente novamente.");
     return;
   }
 
@@ -369,9 +393,6 @@ async function abrirModalFilmes() {
           background:#333;color:#fff;font-size:13px;
         ">
           <option value="">Todas categorias</option>
-          ${[...new Set(filmes.map(f => f.category))].sort()
-            .map(c => `<option value="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</option>`)
-            .join("")}
         </select>
       </div>
 
@@ -452,6 +473,10 @@ async function abrirModalFilmes() {
   const lista = document.getElementById("filmeListaScroll");
   const searchInput = document.getElementById("filmeSearch");
   const categoriaSelect = document.getElementById("filmeCategoria");
+  [...new Set(filmes.map(f => f.category).filter(Boolean))].sort().forEach(c => {
+    const nomeCat = String(c);
+    categoriaSelect.appendChild(new Option(nomeCat.charAt(0).toUpperCase() + nomeCat.slice(1), nomeCat));
+  });
   const qtdInput = document.getElementById("filmeQtd");
 
   let selecionados = new Set();
@@ -561,6 +586,14 @@ async function abrirModalFilmes() {
     });
   }
 
+  // Categoria padrão definida no painel (só se existir na lista)
+  const _cfgFilmes = (typeof adminGetFilmes === "function" && adminGetFilmes()) || null;
+  if (_cfgFilmes && _cfgFilmes.categoriaPadrao) {
+    const alvo = String(_cfgFilmes.categoriaPadrao).toLowerCase();
+    const opt = [...categoriaSelect.options].find(o => o.value.toLowerCase() === alvo);
+    if (opt) categoriaSelect.value = opt.value;
+  }
+
   renderLista();
   searchInput.addEventListener("input", renderLista);
   categoriaSelect.addEventListener("change", renderLista);
@@ -569,10 +602,20 @@ async function abrirModalFilmes() {
   const checkVotos = document.getElementById("checkVotos");
   const configVotos = document.getElementById("configVotos");
 
-  // Restaura estado salvo
+  // Padrões de tickets por votos: o painel (aba Filmes) manda; se o backend estiver
+  // inacessível, usa o último valor salvo neste navegador.
   const votosSalvo = localStorage.getItem(PREFIX + "ticketsVotos");
-  if (votosSalvo) {
-    const cfg = JSON.parse(votosSalvo);
+  let cfgVotos = null;
+  if (_cfgFilmes && _cfgFilmes.votosBase) {
+    cfgVotos = {
+      ativo: !!_cfgFilmes.votosAtivo, base: _cfgFilmes.votosBase, tickets: _cfgFilmes.ticketsPorVotos,
+      min: _cfgFilmes.ticketsMin, max: _cfgFilmes.ticketsMax,
+    };
+  } else if (votosSalvo) {
+    try { cfgVotos = JSON.parse(votosSalvo); } catch (_) { cfgVotos = null; }
+  }
+  if (cfgVotos) {
+    const cfg = cfgVotos;
     checkVotos.checked = cfg.ativo || false;
     document.getElementById("votosBase").value = cfg.base || 50;
     document.getElementById("ticketsPorVotos").value = cfg.tickets || 1;
@@ -629,9 +672,17 @@ async function abrirModalFilmes() {
       ativo: votosAtivo, base, tickets, min: minTickets, max: maxTickets
     }));
 
+    // Sem seleção manual: usa o que está VISÍVEL (categoria + busca). Antes ignorava o filtro
+    // e pegava os primeiros do catálogo inteiro.
+    const _busca = searchInput.value.toLowerCase();
+    const _cat = categoriaSelect.value;
+    const visiveis = filmes.filter(f =>
+      (!_busca || String(f.title).toLowerCase().includes(_busca)) &&
+      (!_cat || f.category === _cat)
+    );
     let fonte = selecionados.size > 0
       ? filmes.filter(f => selecionados.has(f.id))
-      : filmes;
+      : visiveis;
 
     if (selecionados.size === 0) {
       const qtd = Math.min(parseInt(qtdInput.value) || 5, fonte.length);

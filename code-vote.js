@@ -1,12 +1,16 @@
 (function () {
 
-    const CHANNEL = "isaroza_";
+    const CANAL_PADRAO = "isaroza_";
 
     const div = document.getElementById('vote-widget');
 
     let votes = { sim: 0, nao: 0 };
     let voters = new Set();
     let capturing = false;
+
+    // Aceita variações comuns (o texto é comparado em minúsculas)
+    const VOTOS_SIM = new Set(["sim", "s", "ss"]);
+    const VOTOS_NAO = new Set(["nao", "não", "n", "nn"]);
 
     div.innerHTML = `
 
@@ -63,61 +67,95 @@
         }
     };
 
+    // ── Conexão com o chat (WebSocket anônimo) ────────────────────────────────
+    let ws = null;
+    let canal = null;
 
-    const ws = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
+    function canalDaConfig() {
+        return (typeof adminGetCanal === "function") ? adminGetCanal() : CANAL_PADRAO;
+    }
 
-    ws.onopen = () => {
-        ws.send("CAP REQ :twitch.tv/tags twitch.tv/commands");
-        ws.send("PASS SCHMOOPIIE");
-        ws.send("NICK justinfan" + Math.floor(Math.random() * 100000));
-        ws.send("JOIN #" + CHANNEL);
+    function conectar() {
+        ws = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
+        const meuWs = ws;
 
-        console.log("Conectado ao chat");
+        meuWs.onopen = () => {
+            meuWs.send("CAP REQ :twitch.tv/tags twitch.tv/commands");
+            meuWs.send("PASS SCHMOOPIIE");
+            meuWs.send("NICK justinfan" + Math.floor(Math.random() * 100000));
+            if (canal) meuWs.send("JOIN #" + canal);
+            console.log("[votação] Conectado ao chat de #" + canal);
+        };
+
+        meuWs.onmessage = (event) => {
+            // A Twitch pode agrupar VÁRIAS mensagens no mesmo frame (separadas por \r\n).
+            // Antes só a primeira era lida e os votos das demais se perdiam.
+            for (const linha of String(event.data).split("\r\n")) {
+                if (!linha) continue;
+
+                // PING do servidor (as linhas de chat começam com "@tags" ou ":user", nunca com "PING")
+                if (linha.startsWith("PING")) {
+                    meuWs.send("PONG :tmi.twitch.tv");
+                    continue;
+                }
+
+                if (!capturing) continue;
+
+                const match = linha.match(/:(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG #\w+ :(.+)$/);
+                if (!match) continue;
+
+                const username = match[1].toLowerCase();
+                const text = match[2].toLowerCase().trim();
+
+                if (voters.has(username)) continue;
+
+                if (VOTOS_SIM.has(text)) {
+                    votes.sim++;
+                    voters.add(username);
+                } else if (VOTOS_NAO.has(text)) {
+                    votes.nao++;
+                    voters.add(username);
+                }
+            }
+
+            updateUI();
+        };
+
+        // Reconecta sozinho se a conexão cair (o `meuWs !== ws` evita reconectar um socket já substituído)
+        meuWs.onclose = () => {
+            if (meuWs !== ws) return;
+            setTimeout(conectar, 5000);
+        };
+    }
+
+    // Troca de canal pelo painel: sai do antigo e entra no novo, mantendo a conexão
+    window.mudarCanalVotacao = function (novoCanal) {
+        novoCanal = String(novoCanal || "").replace(/^#/, "").toLowerCase();
+        if (!novoCanal || novoCanal === canal) return;
+        const anterior = canal;
+        canal = novoCanal;
+        voters.clear();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            if (anterior) ws.send("PART #" + anterior);
+            ws.send("JOIN #" + canal);
+            console.log("[votação] Canal alterado para #" + canal);
+        }
     };
 
-    ws.onmessage = (event) => {
-        const msg = event.data;
-
-        if (msg.includes("PING")) {
-            ws.send("PONG :tmi.twitch.tv");
-            return;
-        }
-
-        if (!capturing) return;
-
-        const match = msg.match(/:(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG #\w+ :(.+)/);
-        if (!match) return;
-
-        const username = match[1];
-        const text = match[2].toLowerCase().trim();
-
-        if (voters.has(username)) return;
-
-
-        if (text === "sim" || text === "SIM" || text === "s" || text === "ss" || text === "S" || text === "SS" || text === "Ss") {
-            votes.sim++;
-            voters.add(username);
-        }
-
-        if (text === "nao" || text === "não" || text === "NAO" || text === "n" || text === "nn" || text === "N" || text === "Nn" || text === "NN") {
-            votes.nao++;
-            voters.add(username);
-        }
-
-        updateUI();
-
-    };
+    // Espera até 4 s pela config do painel (canal correto) antes da 1ª conexão
+    const pronto = window.adminReady
+        ? Promise.race([window.adminReady, new Promise(r => setTimeout(r, 4000))])
+        : Promise.resolve();
+    pronto.then(() => { canal = canalDaConfig(); conectar(); });
 
 })();
 
-const btn_voto = document.getElementById("btn-voto")
-const div = document.getElementById('vote-widget');
-div.className="sumir"
+(function () {
+    const btn_voto = document.getElementById("btn-voto");
+    const div = document.getElementById('vote-widget');
+    div.className = "sumir";
 
-btn_voto.addEventListener("click", () => {
-    if (div.classList == "sumir") {
-        div.className = "votos-widget"
-    } else if (div.classList == "votos-widget") {
-        div.className = "sumir"
-    }
-})
+    btn_voto.addEventListener("click", () => {
+        div.className = div.classList.contains("sumir") ? "votos-widget" : "sumir";
+    });
+})();
