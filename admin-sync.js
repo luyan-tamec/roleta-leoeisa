@@ -14,7 +14,7 @@
 //  - Troca do canal da Twitch pelo painel reconecta chat da arena e votação.
 //  - adminRegistrarVencedor(): grava o vencedor no histórico do backend.
 
-const ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com","https://luyan-tamec.github.io/roleta-leoeisa"; // ← troque pela URL do Render
+const ADMIN_BACKEND_URL = "https://roleta-admin.onrender.com","https://roleta-admin.duckdns.org"; // ← troque pela URL do Render
 const ADMIN_CANAL_PADRAO = "isaroza_";                          // usado até a config chegar do backend
 const ADMIN_TIMEOUT_MS = 60000;                                 // Render free pode levar ~50 s para acordar
 
